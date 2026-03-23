@@ -1,4 +1,4 @@
-/* ===== 전역 스타일 ===== */
+﻿/* ===== 전역 스타일 ===== */
 * {
   margin: 0;
   padding: 0;
@@ -392,46 +392,30 @@ footer a:hover {
   text-decoration: underline;
 }
 
-/* ===== 광고 레이아웃 ===== */
+/* ===== 좌우 사이드 배너 (flex 방식) ===== */
 
-/* 메인 + 사이드바 2단 레이아웃 */
-.layout-wrapper {
+/* 탭 아래 전체 영역을 가로로 배치 */
+.page-body {
   display: flex;
-  gap: 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  flex: 1;
+  justify-content: center;
   align-items: flex-start;
 }
 
-.layout-wrapper main {
-  flex: 1;
-  min-width: 0;
-  padding: 0; /* 기존 main padding 오버라이드 */
-}
-
-/* 사이드바 광고 영역 */
-.ad-sidebar {
-  width: 300px;
+/* 좌우 배너 공통 */
+.ad-side {
+  width: 160px;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-top: 1.5rem;
-}
-
-.ad-sticky {
-  position: sticky;
-  top: 1rem;
-}
-
-/* 광고 공통 컨테이너 */
-.ad-container {
   background: #f1f5f9;
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
   overflow: hidden;
   text-align: center;
+  position: sticky;
+  top: 1rem;
+  align-self: flex-start;
+  min-height: 500px;
+  margin-top: 1rem;
 }
 
 /* 광고 라벨 */
@@ -440,40 +424,6 @@ footer a:hover {
   color: #94a3b8;
   padding: 2px 6px;
   text-align: left;
-}
-
-/* 헤더 하단 가로 배너 */
-.ad-leaderboard {
-  max-width: 1200px;
-  margin: 0.5rem auto;
-  padding: 0 1rem;
-  min-height: 90px;
-}
-
-/* 사이드바 직사각형 */
-.ad-rectangle {
-  width: 300px;
-  min-height: 250px;
-}
-
-/* 검색결과 인피드 */
-.ad-infeed {
-  margin: 1.5rem 0;
-  min-height: 100px;
-}
-
-/* 콘텐츠 하단 배너 */
-.ad-content-bottom {
-  margin: 2rem 0 0;
-  min-height: 90px;
-}
-
-/* 푸터 상단 배너 */
-.ad-footer-top {
-  max-width: 1200px;
-  margin: 0 auto 0.5rem;
-  padding: 0 1rem;
-  min-height: 90px;
 }
 
 /* ===== 반응형 ===== */
@@ -500,24 +450,12 @@ footer a:hover {
     gap: 0.3rem;
   }
 
-  /* 모바일: 사이드바 숨기고 1단 레이아웃 */
-  .layout-wrapper {
-    flex-direction: column;
-    padding: 0 0.5rem;
+  /* 모바일: 좌우 사이드 배너 숨기고 body 여백 제거 */
+  body {
+    padding-left: 0;
+    padding-right: 0;
   }
-
-  .ad-sidebar {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .ad-rectangle {
-    width: 100%;
-    min-height: 100px;
-  }
-
-  .ad-sticky {
-    position: static;
+  .ad-side {
+    display: none;
   }
 }
