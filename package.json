@@ -1,0 +1,23 @@
+{
+  "name": "ntis-research-helper",
+  "version": "1.0.0",
+  "description": "국가R&D 과제 신청 도우미 - NTIS API + Gemini AI 기반 웹서비스",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["ntis", "research", "gemini", "rnd", "korea"],
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "openai": "^4.70.0",
+    "xml2js": "^0.6.2"
+  }
+}

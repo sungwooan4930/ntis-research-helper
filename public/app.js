@@ -1,0 +1,209 @@
+// app.js - 프론트엔드 로직
+
+// ===== DOM 요소 참조 =====
+const $loading = document.getElementById('loading');
+
+// 데모 모드 배너 표시 여부 체크 (첫 API 응답에서 확인)
+let demoBannerShown = false;
+function checkDemo(data) {
+  if (data.demo && !demoBannerShown) {
+    document.getElementById('demoBanner').classList.remove('hidden');
+    demoBannerShown = true;
+  }
+}
+const tabs = document.querySelectorAll('.tab');
+const panels = document.querySelectorAll('.panel');
+
+// ===== 탭 전환 =====
+tabs.forEach((tab) => {
+  tab.addEventListener('click', () => {
+    tabs.forEach((t) => t.classList.remove('active'));
+    panels.forEach((p) => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== 유틸리티 함수 =====
+
+/** 로딩 표시/숨김 */
+function showLoading() { $loading.classList.remove('hidden'); }
+function hideLoading() { $loading.classList.add('hidden'); }
+
+/** 에러 메시지 HTML 생성 */
+function errorHtml(msg) {
+  return `<div class="error-msg">${msg}</div>`;
+}
+
+/** 텍스트 줄임 (최대 길이 초과 시 ... 추가) */
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max) + '...' : str;
+}
+
+// ===== 기능 1: 유사 과제 검색 =====
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const query = document.getElementById('searchQuery').value.trim();
+  const $result = document.getElementById('searchResult');
+
+  if (!query) {
+    $result.innerHTML = errorHtml('검색어를 입력해주세요.');
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+    checkDemo(data);
+
+    if (data.projects.length === 0) {
+      $result.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
+      return;
+    }
+
+    // 검색 결과 카드 렌더링
+    $result.innerHTML = data.projects
+      .map(
+        (p) => `
+      <div class="project-card">
+        <h3>${p.detailUrl
+            ? `<a href="${p.detailUrl}" target="_blank" rel="noopener">${p.pjtName || '(과제명 없음)'}</a>`
+            : (p.pjtName || '(과제명 없음)')
+          }</h3>
+        <div class="project-meta">
+          ${p.piName ? `<span>연구책임자: ${p.piName}</span>` : ''}
+          ${p.orgName ? `<span>수행기관: ${p.orgName}</span>` : ''}
+          ${p.ministry ? `<span>부처: ${p.ministry}</span>` : ''}
+          ${p.period ? `<span>기간: ${p.period}</span>` : ''}
+          ${p.govFund ? `<span>정부투자연구비: ${Number(p.govFund).toLocaleString()}원</span>` : ''}
+        </div>
+        ${p.abstract ? `<div class="project-abstract">${truncate(p.abstract, 200)}</div>` : ''}
+      </div>`
+      )
+      .join('');
+  } catch (err) {
+    $result.innerHTML = errorHtml(err.message || '검색 중 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
+  }
+});
+
+// Enter 키로 검색 실행
+document.getElementById('searchQuery').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('searchBtn').click();
+});
+
+// ===== 기능 2: 과제 평가 =====
+document.getElementById('evalBtn').addEventListener('click', async () => {
+  const content = document.getElementById('evalContent').value.trim();
+  const $result = document.getElementById('evalResult');
+
+  if (!content) {
+    $result.innerHTML = errorHtml('평가할 연구과제 내용을 입력해주세요.');
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+    checkDemo(data);
+
+    // 항목별 평가 카드 + 종합 점수 + 개선 제안 렌더링
+    const categories = [
+      { key: 'clarity', label: '연구 목적의 명확성' },
+      { key: 'originality', label: '독창성 및 차별성' },
+      { key: 'feasibility', label: '실현 가능성' },
+      { key: 'impact', label: '기대 효과' },
+    ];
+
+    $result.innerHTML = `
+      <div class="eval-section">
+        <div class="total-score">${data.totalScore}<small> / 10</small></div>
+        <p style="text-align:center;color:#64748b;margin-bottom:0.5rem">${data.summary || ''}</p>
+      </div>
+
+      ${categories
+        .map(
+          (c) => `
+        <div class="eval-section">
+          <h3><span class="score-badge">${data[c.key]?.score || '-'}/10</span> ${c.label}</h3>
+          <p style="font-size:0.9rem;color:#475569">${data[c.key]?.comment || ''}</p>
+        </div>`
+        )
+        .join('')}
+
+      <div class="eval-section">
+        <h3>개선 제안</h3>
+        <ul class="suggestion-list">
+          ${(data.suggestions || []).map((s) => `<li>${s}</li>`).join('')}
+        </ul>
+      </div>`;
+  } catch (err) {
+    $result.innerHTML = errorHtml(err.message || '평가 중 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
+  }
+});
+
+// ===== 기능 3: 신청서 평가 및 수정 =====
+document.getElementById('reviewBtn').addEventListener('click', async () => {
+  const content = document.getElementById('reviewContent').value.trim();
+  const $result = document.getElementById('reviewResult');
+
+  if (!content) {
+    $result.innerHTML = errorHtml('신청서 내용을 입력해주세요.');
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await fetch('/api/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+    checkDemo(data);
+
+    // 강점/약점 태그 + 원본/수정본 나란히 표시
+    $result.innerHTML = `
+      <div class="eval-section">
+        <h3>강점</h3>
+        <div>${(data.strengths || []).map((s) => `<span class="tag-good">${s}</span>`).join('')}</div>
+      </div>
+
+      <div class="eval-section">
+        <h3>약점</h3>
+        <div>${(data.weaknesses || []).map((w) => `<span class="tag-bad">${w}</span>`).join('')}</div>
+      </div>
+
+      ${data.overallComment ? `<div class="eval-section"><h3>종합 평가</h3><p style="font-size:0.9rem;color:#475569">${data.overallComment}</p></div>` : ''}
+
+      <div class="review-columns">
+        <div class="review-col">
+          <h3>원본 신청서</h3>
+          <pre>${content}</pre>
+        </div>
+        <div class="review-col">
+          <h3>수정 제안</h3>
+          <pre>${data.revisedContent || ''}</pre>
+        </div>
+      </div>`;
+  } catch (err) {
+    $result.innerHTML = errorHtml(err.message || '리뷰 중 오류가 발생했습니다.');
+  } finally {
+    hideLoading();
+  }
+});

@@ -1,0 +1,523 @@
+/* ===== 전역 스타일 ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 헤더 ===== */
+.demo-banner {
+  background: #fef9c3;
+  border-bottom: 2px solid #facc15;
+  color: #854d0e;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+}
+.demo-banner.hidden { display: none; }
+
+header {
+  background: #2563eb;
+  color: #fff;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+header .subtitle {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+/* ===== 탭 네비게이션 ===== */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  background: #fff;
+  border-bottom: 2px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 0.85rem 1.5rem;
+  border: none;
+  background: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: #64748b;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #2563eb;
+}
+
+.tab.active {
+  color: #2563eb;
+  font-weight: 600;
+  border-bottom-color: #2563eb;
+}
+
+/* ===== 메인 컨텐츠 ===== */
+main {
+  flex: 1;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 0;
+}
+
+/* layout-wrapper 안에 있을 때는 auto margin 제거 */
+.layout-wrapper main {
+  margin: 0;
+  padding: 1.5rem 0;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+/* 안내 텍스트 */
+.guide {
+  background: #eff6ff;
+  border-left: 4px solid #2563eb;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.88rem;
+  border-radius: 0 6px 6px 0;
+  color: #1e40af;
+}
+
+/* 입력 영역 */
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.2rem;
+}
+
+.input-group input {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #2563eb;
+}
+
+textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 0.8rem;
+  font-family: inherit;
+  transition: border 0.2s;
+}
+
+textarea:focus {
+  border-color: #2563eb;
+}
+
+button {
+  padding: 0.7rem 1.4rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* ===== 결과 영역 ===== */
+.result {
+  margin-top: 1rem;
+}
+
+/* 검색 결과 카드 */
+.project-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+  transition: box-shadow 0.2s;
+}
+
+.project-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.project-card h3 {
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.project-card h3 a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.project-card h3 a:hover {
+  text-decoration: underline;
+}
+
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.project-meta span::before {
+  margin-right: 0.3rem;
+}
+
+.project-abstract {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* 평가 결과 */
+.eval-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+}
+
+.eval-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.score-badge {
+  display: inline-block;
+  background: #2563eb;
+  color: #fff;
+  padding: 0.15rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.total-score {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2563eb;
+  padding: 1rem;
+}
+
+.total-score small {
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.suggestion-list {
+  list-style: none;
+  padding: 0;
+}
+
+.suggestion-list li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+}
+
+.suggestion-list li::before {
+  content: '\1F4A1';
+  margin-right: 0.5rem;
+}
+
+/* 리뷰 결과 - 나란히 표시 */
+.review-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.review-col {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.2rem;
+}
+
+.review-col h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.review-col pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.tag-good {
+  display: inline-block;
+  background: #dcfce7;
+  color: #166534;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin: 0.2rem;
+}
+
+.tag-bad {
+  display: inline-block;
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin: 0.2rem;
+}
+
+/* 에러 메시지 */
+.error-msg {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* 빈 결과 */
+.empty-msg {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* ===== 로딩 오버레이 ===== */
+.loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading.hidden {
+  display: none;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading p {
+  margin-top: 0.8rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* ===== 푸터 ===== */
+footer {
+  text-align: center;
+  padding: 1.2rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  border-top: 1px solid #e2e8f0;
+}
+
+footer a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* ===== 광고 레이아웃 ===== */
+
+/* 메인 + 사이드바 2단 레이아웃 */
+.layout-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  align-items: flex-start;
+}
+
+.layout-wrapper main {
+  flex: 1;
+  min-width: 0;
+  padding: 0; /* 기존 main padding 오버라이드 */
+}
+
+/* 사이드바 광고 영역 */
+.ad-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1.5rem;
+}
+
+.ad-sticky {
+  position: sticky;
+  top: 1rem;
+}
+
+/* 광고 공통 컨테이너 */
+.ad-container {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* 광고 라벨 */
+.ad-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  padding: 2px 6px;
+  text-align: left;
+}
+
+/* 헤더 하단 가로 배너 */
+.ad-leaderboard {
+  max-width: 1200px;
+  margin: 0.5rem auto;
+  padding: 0 1rem;
+  min-height: 90px;
+}
+
+/* 사이드바 직사각형 */
+.ad-rectangle {
+  width: 300px;
+  min-height: 250px;
+}
+
+/* 검색결과 인피드 */
+.ad-infeed {
+  margin: 1.5rem 0;
+  min-height: 100px;
+}
+
+/* 콘텐츠 하단 배너 */
+.ad-content-bottom {
+  margin: 2rem 0 0;
+  min-height: 90px;
+}
+
+/* 푸터 상단 배너 */
+.ad-footer-top {
+  max-width: 1200px;
+  margin: 0 auto 0.5rem;
+  padding: 0 1rem;
+  min-height: 90px;
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 640px) {
+  header h1 {
+    font-size: 1.3rem;
+  }
+
+  .tab {
+    padding: 0.7rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .input-group {
+    flex-direction: column;
+  }
+
+  .review-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .project-meta {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  /* 모바일: 사이드바 숨기고 1단 레이아웃 */
+  .layout-wrapper {
+    flex-direction: column;
+    padding: 0 0.5rem;
+  }
+
+  .ad-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .ad-rectangle {
+    width: 100%;
+    min-height: 100px;
+  }
+
+  .ad-sticky {
+    position: static;
+  }
+}

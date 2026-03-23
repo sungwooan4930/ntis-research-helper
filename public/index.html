@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>국가R&D 과제 도우미</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- ====================================================
+    Google AdSense 설정
+    배포 후 https://adsense.google.com 에서 승인받은 뒤
+    아래 YOUR_ADSENSE_CLIENT_ID 를 실제 값으로 교체하세요.
+    예) ca-pub-1234567890123456
+  ===================================================== -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_ADSENSE_CLIENT_ID"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- 헤더 -->
+  <header>
+    <h1>국가R&D 과제 도우미</h1>
+    <p class="subtitle">NTIS 유사과제 검색 · AI 과제평가 · 신청서 리뷰</p>
+  </header>
+
+  <!-- ====================================================
+    광고 ① 헤더 하단 가로 배너 (Leaderboard 728x90)
+    PC에서 주목도 높은 위치
+  ===================================================== -->
+  <div class="ad-container ad-leaderboard">
+    <div class="ad-label">광고</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+         data-ad-slot="YOUR_AD_SLOT_1"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- 데모 배너 -->
+  <div id="demoBanner" class="demo-banner hidden">
+    ⚠️ <strong>데모 모드</strong> — API 키가 설정되지 않아 샘플 데이터로 동작합니다.
+  </div>
+
+  <!-- 탭 네비게이션 -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="search">유사 과제 검색</button>
+    <button class="tab" data-tab="evaluate">과제 평가</button>
+    <button class="tab" data-tab="review">신청서 평가·수정</button>
+  </nav>
+
+  <!-- 전체 레이아웃: 메인 콘텐츠 + 사이드바 -->
+  <div class="layout-wrapper">
+
+    <main>
+      <!-- ==================== 기능 1: 유사 과제 검색 ==================== -->
+      <section id="search" class="panel active">
+        <div class="guide">
+          <strong>사용법:</strong> 연구 키워드 또는 연구 내용을 입력하면 NTIS에 등록된 유사 과제를 검색합니다.
+        </div>
+        <div class="input-group">
+          <input type="text" id="searchQuery" placeholder="예: 인공지능 기반 신약 개발" />
+          <button id="searchBtn">검색</button>
+        </div>
+        <div id="searchResult" class="result"></div>
+
+        <!-- ====================================================
+          광고 ③ 검색결과 중간 인피드 광고
+          검색결과가 많을 때 자연스럽게 삽입됨
+        ===================================================== -->
+        <div class="ad-container ad-infeed" id="adInfeed">
+          <div class="ad-label">광고</div>
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-format="fluid"
+               data-ad-layout-key="-6t+ed+2i-1n-4w"
+               data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+               data-ad-slot="YOUR_AD_SLOT_3"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+      </section>
+
+      <!-- ==================== 기능 2: 과제 평가 ==================== -->
+      <section id="evaluate" class="panel">
+        <div class="guide">
+          <strong>사용법:</strong> 연구과제 내용(목적, 방법, 기대효과 등)을 입력하면 AI가 항목별로 평가하고 개선점을 제안합니다.
+        </div>
+        <textarea id="evalContent" rows="10" placeholder="연구과제 내용을 입력하세요..."></textarea>
+        <button id="evalBtn">평가 요청</button>
+        <div id="evalResult" class="result"></div>
+      </section>
+
+      <!-- ==================== 기능 3: 신청서 평가 및 수정 ==================== -->
+      <section id="review" class="panel">
+        <div class="guide">
+          <strong>사용법:</strong> 작성한 연구과제 신청서 텍스트를 붙여넣으면 AI가 강점/약점을 분석하고 수정본을 제안합니다.
+        </div>
+        <textarea id="reviewContent" rows="10" placeholder="연구과제 신청서 내용을 붙여넣으세요..."></textarea>
+        <button id="reviewBtn">리뷰 요청</button>
+        <div id="reviewResult" class="result"></div>
+      </section>
+
+      <!-- ====================================================
+        광고 ④ 콘텐츠 하단 가로 배너
+        결과 확인 후 자연스럽게 노출
+      ===================================================== -->
+      <div class="ad-container ad-content-bottom">
+        <div class="ad-label">광고</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+             data-ad-slot="YOUR_AD_SLOT_4"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </main>
+
+    <!-- ====================================================
+      광고 ② 우측 사이드바 (Rectangle 300x250)
+      PC에서만 표시, 모바일에서는 숨김
+    ===================================================== -->
+    <aside class="ad-sidebar">
+      <div class="ad-container ad-rectangle">
+        <div class="ad-label">광고</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+             data-ad-slot="YOUR_AD_SLOT_2"
+             data-ad-format="auto"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+
+      <!-- 사이드바 고정 광고 (스크롤 따라오는 sticky) -->
+      <div class="ad-container ad-rectangle ad-sticky">
+        <div class="ad-label">광고</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+             data-ad-slot="YOUR_AD_SLOT_5"
+             data-ad-format="auto"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </aside>
+
+  </div><!-- /layout-wrapper -->
+
+  <!-- 로딩 오버레이 -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <p>처리 중입니다...</p>
+  </div>
+
+  <!-- ====================================================
+    광고 ⑤ 푸터 상단 가로 배너
+    페이지 하단 체류 시간 활용
+  ===================================================== -->
+  <div class="ad-container ad-footer-top">
+    <div class="ad-label">광고</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-YOUR_ADSENSE_CLIENT_ID"
+         data-ad-slot="YOUR_AD_SLOT_6"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- 푸터 -->
+  <footer>
+    <p>Powered by <a href="https://www.ntis.go.kr" target="_blank" rel="noopener">NTIS Open API</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
