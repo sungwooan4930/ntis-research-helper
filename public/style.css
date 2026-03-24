@@ -392,6 +392,92 @@ footer a:hover {
   text-decoration: underline;
 }
 
+/* ===== 파일 업로드 ===== */
+.upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 0.5rem;
+  background: #f8fafc;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.upload-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.upload-placeholder p {
+  color: #475569;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.upload-placeholder small {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.upload-btn-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.upload-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  justify-content: center;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.upload-remove {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 8px;
+}
+
+.upload-loading {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1rem 0 0.5rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+
 /* ===== 좌우 사이드 배너 (flex 방식) ===== */
 
 /* 탭 아래 전체 영역을 가로로 배치 */

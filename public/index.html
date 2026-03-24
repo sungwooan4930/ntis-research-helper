@@ -74,9 +74,33 @@
     <!-- ==================== 기능 3: 신청서 평가 및 수정 ==================== -->
     <section id="review" class="panel">
       <div class="guide">
-        <strong>사용법:</strong> 작성한 연구과제 신청서 텍스트를 붙여넣으면 AI가 강점/약점을 분석하고 수정본을 제안합니다.
+        <strong>사용법:</strong> 신청서 파일을 업로드하거나 텍스트를 직접 붙여넣으면 AI가 강점/약점을 분석하고 수정본을 제안합니다.
+        <br><small style="color:#64748b">지원 형식: PDF, DOCX, TXT (최대 10MB) · HWP는 PDF/DOCX 변환 후 업로드</small>
       </div>
-      <textarea id="reviewContent" rows="10" placeholder="연구과제 신청서 내용을 붙여넣으세요..."></textarea>
+
+      <!-- 파일 업로드 영역 -->
+      <div class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" hidden>
+        <div class="upload-placeholder" id="uploadPlaceholder">
+          <span class="upload-icon">📄</span>
+          <p>파일을 드래그하거나 <button type="button" class="upload-btn-link" id="uploadTrigger">클릭해서 선택</button></p>
+          <small>PDF · DOCX · TXT · 최대 10MB</small>
+        </div>
+        <div class="upload-file-info hidden" id="uploadFileInfo">
+          <span class="upload-icon">✅</span>
+          <span id="uploadFileName"></span>
+          <button type="button" class="upload-remove" id="uploadRemove">✕ 제거</button>
+        </div>
+        <div class="upload-loading hidden" id="uploadLoading">
+          <span>⏳ 파일 읽는 중...</span>
+        </div>
+      </div>
+
+      <div class="upload-divider">
+        <span>또는 직접 입력</span>
+      </div>
+
+      <textarea id="reviewContent" rows="8" placeholder="연구과제 신청서 내용을 붙여넣으세요..."></textarea>
       <button id="reviewBtn">리뷰 요청</button>
       <div id="reviewResult" class="result"></div>
     </section>

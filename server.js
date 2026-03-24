@@ -4,6 +4,22 @@ const express = require('express');
 const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
+const path = require('path');
+
+// 파일 업로드 설정 (메모리 저장, 최대 10MB)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.pdf', '.docx', '.doc', '.txt', '.hwp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('지원하지 않는 파일 형식입니다. (PDF, DOCX, TXT 지원)'));
+  },
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -209,6 +225,50 @@ ${content}
   } catch (err) {
     console.error('[리뷰 오류]', err.message);
     res.status(500).json({ error: '신청서 리뷰 중 오류가 발생했습니다: ' + err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// 파일 업로드 → 텍스트 추출
+// ─────────────────────────────────────────────
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: '파일을 선택해주세요.' });
+
+  const ext = path.extname(req.file.originalname).toLowerCase();
+
+  try {
+    let text = '';
+
+    if (ext === '.pdf') {
+      // PDF 파싱
+      const data = await pdfParse(req.file.buffer);
+      text = data.text;
+    } else if (ext === '.docx' || ext === '.doc') {
+      // Word 파싱
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      text = result.value;
+    } else if (ext === '.txt') {
+      // 텍스트 파일
+      text = req.file.buffer.toString('utf-8');
+    } else if (ext === '.hwp') {
+      // HWP는 파싱 라이브러리 없이 안내 메시지
+      return res.status(415).json({
+        error: '한컴(HWP) 파일은 직접 지원이 어렵습니다. PDF 또는 DOCX로 변환 후 업로드해주세요.'
+      });
+    }
+
+    text = text.trim();
+    if (!text || text.length < 10) {
+      return res.status(400).json({ error: '파일에서 텍스트를 추출할 수 없습니다. 스캔 이미지 PDF는 지원되지 않습니다.' });
+    }
+
+    // 너무 긴 경우 앞 8000자만 사용
+    if (text.length > 8000) text = text.substring(0, 8000) + '\n...(이하 생략)';
+
+    res.json({ text, fileName: req.file.originalname, length: text.length });
+  } catch (err) {
+    console.error('[파일 파싱 오류]', err.message);
+    res.status(500).json({ error: '파일 파싱 중 오류가 발생했습니다: ' + err.message });
   }
 });
 

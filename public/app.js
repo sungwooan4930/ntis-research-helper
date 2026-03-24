@@ -155,6 +155,87 @@ document.getElementById('evalBtn').addEventListener('click', async () => {
   }
 });
 
+// ===== 파일 업로드 기능 =====
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const uploadTrigger = document.getElementById('uploadTrigger');
+const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+const uploadFileInfo = document.getElementById('uploadFileInfo');
+const uploadFileName = document.getElementById('uploadFileName');
+const uploadRemove = document.getElementById('uploadRemove');
+const uploadLoading = document.getElementById('uploadLoading');
+
+// 클릭으로 파일 선택
+uploadTrigger.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('click', (e) => {
+  if (e.target === uploadArea) fileInput.click();
+});
+
+// 드래그 앤 드롭
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileUpload(file);
+});
+
+// 파일 선택 이벤트
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFileUpload(fileInput.files[0]);
+});
+
+// 파일 제거
+uploadRemove.addEventListener('click', () => {
+  fileInput.value = '';
+  document.getElementById('reviewContent').value = '';
+  uploadPlaceholder.classList.remove('hidden');
+  uploadFileInfo.classList.add('hidden');
+});
+
+// 파일 업로드 처리
+async function handleFileUpload(file) {
+  const allowedExt = ['.pdf', '.docx', '.doc', '.txt'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+  if (!allowedExt.includes(ext)) {
+    if (ext === '.hwp') {
+      document.getElementById('reviewResult').innerHTML = errorHtml('한컴(HWP) 파일은 직접 지원이 어렵습니다. PDF 또는 DOCX로 변환 후 업로드해주세요.');
+    } else {
+      document.getElementById('reviewResult').innerHTML = errorHtml('지원하지 않는 형식입니다. PDF, DOCX, TXT 파일을 사용해주세요.');
+    }
+    return;
+  }
+
+  // 로딩 표시
+  uploadPlaceholder.classList.add('hidden');
+  uploadFileInfo.classList.add('hidden');
+  uploadLoading.classList.remove('hidden');
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error);
+
+    // 텍스트 textarea에 삽입
+    document.getElementById('reviewContent').value = data.text;
+
+    // 파일명 표시
+    uploadFileName.textContent = `${data.fileName} (${data.length.toLocaleString()}자 추출됨)`;
+    uploadLoading.classList.add('hidden');
+    uploadFileInfo.classList.remove('hidden');
+  } catch (err) {
+    uploadLoading.classList.add('hidden');
+    uploadPlaceholder.classList.remove('hidden');
+    document.getElementById('reviewResult').innerHTML = errorHtml(err.message || '파일 처리 중 오류가 발생했습니다.');
+  }
+}
+
 // ===== 기능 3: 신청서 평가 및 수정 =====
 document.getElementById('reviewBtn').addEventListener('click', async () => {
   const content = document.getElementById('reviewContent').value.trim();
