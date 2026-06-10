@@ -1,13 +1,13 @@
-// server.js - NTIS 연구과제 도우미 백엔드 서버 (Gemini AI 사용)
+// server.js - NTIS 연구과제 도우미 백엔드 서버 (로컬 Ollama/Gemma 사용)
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const { parseStringPromise } = require('xml2js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const path = require('path');
+const llm = require('./lib/llm');
 
 // 파일 업로드 설정 (메모리 저장, 최대 10MB)
 const upload = multer({
@@ -26,22 +26,64 @@ const PORT = process.env.PORT || 3000;
 
 // 데모 모드: NTIS API 키가 없을 때만 더미 데이터
 const NTIS_DEMO = !process.env.NTIS_API_KEY || process.env.NTIS_API_KEY === '여기에_NTIS_인증키';
-const HAS_GEMINI = !!(process.env.GEMINI_API_KEY);
 
-console.log(`NTIS: ${NTIS_DEMO ? '데모모드' : '실제API'} | Gemini: ${HAS_GEMINI ? '연결됨' : '없음'}`);
+console.log(`NTIS: ${NTIS_DEMO ? '데모모드' : '실제API'} | LLM: Ollama(${llm.OLLAMA_MODEL})`);
 
 // 미들웨어 설정
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
-// Gemini 클라이언트
-const genAI = HAS_GEMINI ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+// ─────────────────────────────────────────────
+// LLM 공통: 스키마 / 에러 매핑 / 헬스체크
+// ─────────────────────────────────────────────
+const EVALUATE_SCHEMA = {
+  type: 'object',
+  properties: {
+    clarity: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    originality: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    feasibility: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    impact: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    totalScore: { type: 'integer' },
+    summary: { type: 'string' },
+    suggestions: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['clarity', 'originality', 'feasibility', 'impact', 'totalScore', 'summary', 'suggestions'],
+};
 
-// Gemini 텍스트 생성 헬퍼
-async function geminiGenerate(prompt) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+const REVIEW_SCHEMA = {
+  type: 'object',
+  properties: {
+    strengths: { type: 'array', items: { type: 'string' } },
+    weaknesses: { type: 'array', items: { type: 'string' } },
+    overallComment: { type: 'string' },
+    revisedContent: { type: 'string' },
+  },
+  required: ['strengths', 'weaknesses', 'overallComment', 'revisedContent'],
+};
+
+// LLM 예외를 적절한 HTTP 응답으로 매핑
+function sendLlmError(res, err, context) {
+  console.error(`[${context}]`, err.message);
+  if (err instanceof llm.LlmUnavailableError)
+    return res.status(503).json({ error: 'Ollama 서버에 연결할 수 없습니다. `ollama serve` 실행 및 `ollama pull gemma3:12b`를 확인하세요.' });
+  if (err instanceof llm.LlmTimeoutError)
+    return res.status(504).json({ error: '모델 응답이 지연되어 시간 초과되었습니다. 입력을 줄이거나 다시 시도하세요.' });
+  if (err instanceof llm.LlmParseError)
+    return res.status(502).json({ error: '모델이 올바른 형식의 응답을 생성하지 못했습니다.' });
+  return res.status(500).json({ error: `${context} 중 오류가 발생했습니다: ${err.message}` });
+}
+
+// 기동 시 Ollama 연결/모델 존재 점검(경고만, 기동은 계속)
+async function checkOllama() {
+  try {
+    const res = await fetch(`${llm.OLLAMA_HOST}/api/tags`);
+    if (!res.ok) { console.warn(`⚠️  Ollama 응답 비정상 (${res.status})`); return; }
+    const data = await res.json();
+    const exists = (data.models || []).some((m) => m.name === llm.OLLAMA_MODEL || m.name.startsWith(llm.OLLAMA_MODEL.split(':')[0]));
+    console.log(exists ? `✅ Ollama 모델 확인: ${llm.OLLAMA_MODEL}` : `⚠️  모델 ${llm.OLLAMA_MODEL} 미설치 — 'ollama pull ${llm.OLLAMA_MODEL}' 실행 필요`);
+  } catch {
+    console.warn(`⚠️  Ollama(${llm.OLLAMA_HOST}) 연결 안 됨 — 'ollama serve' 실행 확인`);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -275,4 +317,5 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`✅ 서버: http://localhost:${PORT}`);
+  checkOllama();
 });
