@@ -19,3 +19,13 @@ test('abort 시 LlmTimeoutError', async () => {
   global.fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
   await assert.rejects(() => llm.generate('p'), llm.LlmTimeoutError);
 });
+
+test('HTTP 500 시 LlmUnavailableError', async () => {
+  global.fetch = async () => ({ ok: false, status: 500, text: async () => 'internal error' });
+  await assert.rejects(() => llm.generate('p'), llm.LlmUnavailableError);
+});
+
+test('response 필드 없으면 LlmUnavailableError', async () => {
+  global.fetch = async () => ({ ok: true, json: async () => ({ error: 'model not found' }) });
+  await assert.rejects(() => llm.generate('p'), llm.LlmUnavailableError);
+});
