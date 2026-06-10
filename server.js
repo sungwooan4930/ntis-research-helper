@@ -39,11 +39,11 @@ app.use(express.static('public'));
 const EVALUATE_SCHEMA = {
   type: 'object',
   properties: {
-    clarity: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
-    originality: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
-    feasibility: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
-    impact: { type: 'object', properties: { score: { type: 'integer' }, comment: { type: 'string' } }, required: ['score', 'comment'] },
-    totalScore: { type: 'integer' },
+    clarity: { type: 'object', properties: { score: { type: 'integer', minimum: 1, maximum: 10 }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    originality: { type: 'object', properties: { score: { type: 'integer', minimum: 1, maximum: 10 }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    feasibility: { type: 'object', properties: { score: { type: 'integer', minimum: 1, maximum: 10 }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    impact: { type: 'object', properties: { score: { type: 'integer', minimum: 1, maximum: 10 }, comment: { type: 'string' } }, required: ['score', 'comment'] },
+    totalScore: { type: 'integer', minimum: 1, maximum: 10 },
     summary: { type: 'string' },
     suggestions: { type: 'array', items: { type: 'string' } },
   },
@@ -65,7 +65,7 @@ const REVIEW_SCHEMA = {
 function sendLlmError(res, err, context) {
   console.error(`[${context}]`, err.message);
   if (err instanceof llm.LlmUnavailableError)
-    return res.status(503).json({ error: 'Ollama 서버에 연결할 수 없습니다. `ollama serve` 실행 및 `ollama pull gemma3:12b`를 확인하세요.' });
+    return res.status(503).json({ error: `Ollama 서버에 연결할 수 없습니다. \`ollama serve\` 실행 및 \`ollama pull ${llm.OLLAMA_MODEL}\`를 확인하세요.` });
   if (err instanceof llm.LlmTimeoutError)
     return res.status(504).json({ error: '모델 응답이 지연되어 시간 초과되었습니다. 입력을 줄이거나 다시 시도하세요.' });
   if (err instanceof llm.LlmParseError)
@@ -75,14 +75,22 @@ function sendLlmError(res, err, context) {
 
 // 기동 시 Ollama 연결/모델 존재 점검(경고만, 기동은 계속)
 async function checkOllama() {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 5000);
   try {
-    const res = await fetch(`${llm.OLLAMA_HOST}/api/tags`);
+    const res = await fetch(`${llm.OLLAMA_HOST}/api/tags`, { signal: ac.signal });
     if (!res.ok) { console.warn(`⚠️  Ollama 응답 비정상 (${res.status})`); return; }
     const data = await res.json();
-    const exists = (data.models || []).some((m) => m.name === llm.OLLAMA_MODEL || m.name.startsWith(llm.OLLAMA_MODEL.split(':')[0]));
+    const exists = (data.models || []).some((m) =>
+      m.name === llm.OLLAMA_MODEL ||
+      m.name.startsWith(llm.OLLAMA_MODEL + ':') ||
+      m.name.startsWith(llm.OLLAMA_MODEL + '-')
+    );
     console.log(exists ? `✅ Ollama 모델 확인: ${llm.OLLAMA_MODEL}` : `⚠️  모델 ${llm.OLLAMA_MODEL} 미설치 — 'ollama pull ${llm.OLLAMA_MODEL}' 실행 필요`);
   } catch {
     console.warn(`⚠️  Ollama(${llm.OLLAMA_HOST}) 연결 안 됨 — 'ollama serve' 실행 확인`);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
