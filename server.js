@@ -204,77 +204,50 @@ app.get('/api/search', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// 기능 2: 연구과제 평가 (Gemini)
+// 기능 2: 연구과제 평가 (로컬 Ollama/Gemma)
 // ─────────────────────────────────────────────
 app.post('/api/evaluate', async (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: '평가할 연구과제 내용을 입력해주세요.' });
 
-  if (!HAS_GEMINI) {
-    return res.status(400).json({ error: 'Gemini API 키가 설정되지 않았습니다.' });
-  }
-
   try {
     const prompt = `당신은 국가R&D 과제 평가 전문가입니다.
-아래 연구과제 내용을 항목별로 평가하고, 반드시 순수 JSON만 반환하세요 (마크다운 없이).
+아래 연구과제 내용을 항목별로 평가하세요.
 
 평가할 연구과제:
 ${content}
 
-반환 형식:
-{
-  "clarity": { "score": 숫자(1-10), "comment": "평가 코멘트" },
-  "originality": { "score": 숫자(1-10), "comment": "평가 코멘트" },
-  "feasibility": { "score": 숫자(1-10), "comment": "평가 코멘트" },
-  "impact": { "score": 숫자(1-10), "comment": "평가 코멘트" },
-  "totalScore": 숫자(1-10),
-  "summary": "종합 평가 요약",
-  "suggestions": ["개선 제안 1", "개선 제안 2", "개선 제안 3"]
-}`;
+각 항목(clarity, originality, feasibility, impact)은 1~10 정수 score와 한국어 comment를 포함하고,
+totalScore(1~10 정수), summary(종합 요약), suggestions(개선 제안 문자열 배열 3개)를 채우세요.`;
 
-    const raw = await geminiGenerate(prompt);
-    const jsonStr = raw.replace(/^```json?\s*/m, '').replace(/\s*```$/m, '').trim();
-    const evaluation = JSON.parse(jsonStr);
+    const evaluation = await llm.generateJSON(prompt, EVALUATE_SCHEMA);
     res.json(evaluation);
   } catch (err) {
-    console.error('[평가 오류]', err.message);
-    res.status(500).json({ error: '과제 평가 중 오류가 발생했습니다: ' + err.message });
+    sendLlmError(res, err, '과제 평가');
   }
 });
 
 // ─────────────────────────────────────────────
-// 기능 3: 신청서 평가 및 수정 제안 (Gemini)
+// 기능 3: 신청서 평가 및 수정 제안 (로컬 Ollama/Gemma)
 // ─────────────────────────────────────────────
 app.post('/api/review', async (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: '신청서 내용을 입력해주세요.' });
 
-  if (!HAS_GEMINI) {
-    return res.status(400).json({ error: 'Gemini API 키가 설정되지 않았습니다.' });
-  }
-
   try {
     const prompt = `당신은 국가R&D 과제 신청서 작성 전문 컨설턴트입니다.
-아래 신청서를 분석하고 수정 버전을 제안하세요. 반드시 순수 JSON만 반환하세요 (마크다운 없이).
+아래 신청서를 분석하고 수정 버전을 제안하세요.
 
 신청서 내용:
 ${content}
 
-반환 형식:
-{
-  "strengths": ["강점 1", "강점 2"],
-  "weaknesses": ["약점 1", "약점 2"],
-  "overallComment": "종합 평가 코멘트",
-  "revisedContent": "수정된 신청서 전문"
-}`;
+strengths(강점 배열), weaknesses(약점 배열), overallComment(종합 평가),
+revisedContent(수정된 신청서 전문)를 한국어로 채우세요.`;
 
-    const raw = await geminiGenerate(prompt);
-    const jsonStr = raw.replace(/^```json?\s*/m, '').replace(/\s*```$/m, '').trim();
-    const review = JSON.parse(jsonStr);
+    const review = await llm.generateJSON(prompt, REVIEW_SCHEMA);
     res.json(review);
   } catch (err) {
-    console.error('[리뷰 오류]', err.message);
-    res.status(500).json({ error: '신청서 리뷰 중 오류가 발생했습니다: ' + err.message });
+    sendLlmError(res, err, '신청서 리뷰');
   }
 });
 
