@@ -29,3 +29,23 @@ test('response 필드 없으면 LlmUnavailableError', async () => {
   global.fetch = async () => ({ ok: true, json: async () => ({ error: 'model not found' }) });
   await assert.rejects(() => llm.generate('p'), llm.LlmUnavailableError);
 });
+
+test('generateJSON: 정상 파싱', async () => {
+  global.fetch = async () => ({ ok: true, json: async () => ({ response: '{"a":1}' }) });
+  assert.deepStrictEqual(await llm.generateJSON('p', { type: 'object' }), { a: 1 });
+});
+
+test('generateJSON: 1차 파싱 실패 후 재시도 성공', async () => {
+  let n = 0;
+  global.fetch = async () => {
+    n++;
+    return { ok: true, json: async () => ({ response: n === 1 ? '깨진 json' : '{"ok":true}' }) };
+  };
+  assert.deepStrictEqual(await llm.generateJSON('p', {}), { ok: true });
+  assert.strictEqual(n, 2);
+});
+
+test('generateJSON: 재시도 후에도 실패하면 LlmParseError', async () => {
+  global.fetch = async () => ({ ok: true, json: async () => ({ response: 'not json' }) });
+  await assert.rejects(() => llm.generateJSON('p', {}), llm.LlmParseError);
+});
