@@ -573,6 +573,7 @@ footer a:hover {
 .search-options input[type="text"] { width: 11rem; }
 .search-options select:disabled { background: #f1f5f9; color: #94a3b8; }
 .field-note { font-size: 0.8rem; color: #b45309; width: 100%; }
+.field-note.hidden { display: none; }
 
 /* ===== 페이지네이션 ===== */
 .pagination {
