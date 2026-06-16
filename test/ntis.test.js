@@ -146,6 +146,7 @@ test('buildSearchParams: 연도 범위/단일', () => {
 
 test('buildSearchParams: 잘못된 연도 무시', () => {
   assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: 'abc', yearTo: '20' }).get('addQuery'), null);
+  assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: '20230' }).get('addQuery'), null); // 5자리 무시
 });
 
 test('buildSearchParams: 부처/기관 query 결합 + 필드 BI 강제', () => {
