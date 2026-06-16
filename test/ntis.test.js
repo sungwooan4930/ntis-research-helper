@@ -86,3 +86,7 @@ test('parseProjectsXml: 결과 0건', async () => {
 test('parseProjectsXml: 오류 XML → NtisError', async () => {
   await assert.rejects(() => ntis.parseProjectsXml(ERROR_XML), ntis.NtisError);
 });
+
+test('parseProjectsXml: 잘못된 XML → NtisError', async () => {
+  await assert.rejects(() => ntis.parseProjectsXml('<RESULT><broken'), ntis.NtisError);
+});
