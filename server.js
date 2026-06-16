@@ -168,8 +168,21 @@ app.get('/api/search', async (req, res) => {
   }
 
   try {
-    const { total, projects } = await ntis.searchProjects(query);
-    res.json({ total, projects });
+    const { field, sort, yearFrom, yearTo, ministry, agency } = req.query;
+    let start = parseInt(req.query.start, 10);
+    if (!Number.isInteger(start) || start < 1) start = 1;
+
+    const { total, projects, startPosition, displayCount } = await ntis.searchProjects(query, {
+      startPosition: start,
+      displayCount: 20,
+      field,
+      sort,
+      yearFrom,
+      yearTo,
+      ministry,
+      agency,
+    });
+    res.json({ total, projects, startPosition, displayCount });
   } catch (err) {
     console.error('[검색 오류]', err.message);
     if (err instanceof ntis.NtisUnavailableError)
