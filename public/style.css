@@ -545,3 +545,59 @@ footer a:hover {
     display: none;
   }
 }
+
+/* ===== 고급 검색 컨트롤 ===== */
+.search-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin: 0.75rem 0 0.25rem;
+}
+.search-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: #475569;
+}
+.search-options select,
+.search-options input[type="text"],
+.search-options input[type="number"] {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.88rem;
+}
+.search-options .year-input { width: 5rem; }
+.search-options input[type="text"] { width: 11rem; }
+.search-options select:disabled { background: #f1f5f9; color: #94a3b8; }
+.field-note { font-size: 0.8rem; color: #b45309; width: 100%; }
+
+/* ===== 페이지네이션 ===== */
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
+  margin: 1.25rem 0 0.5rem;
+}
+.pagination .page-btn {
+  min-width: 2.2rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #334155;
+}
+.pagination .page-btn:hover:not(:disabled) { background: #f1f5f9; }
+.pagination .page-btn.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  font-weight: 600;
+}
+.pagination .page-btn:disabled { cursor: default; opacity: 0.5; }
+.pagination .page-btn.active:disabled { opacity: 1; }
