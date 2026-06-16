@@ -8,6 +8,7 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const path = require('path');
 const llm = require('./lib/llm');
+const ntis = require('./lib/ntis');
 
 // 파일 업로드 설정 (메모리 저장, 최대 10MB)
 const upload = multer({
@@ -162,44 +163,24 @@ app.get('/api/search', async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: '검색어를 입력해주세요.' });
 
+  // 데모 모드: NTIS 키가 없으면 더미 데이터
   if (NTIS_DEMO) {
     await new Promise((r) => setTimeout(r, 800));
     return res.json({ demo: true, total: DUMMY_PROJECTS.length, projects: DUMMY_PROJECTS });
   }
 
   try {
-    const response = await axios.get('https://www.ntis.go.kr/rndopen/openApi/pjtSearch/', {
-      params: { apiKey: process.env.NTIS_API_KEY, pageSize: 10, pageNum: 1, query },
-      timeout: 15000,
-    });
-
-    const parsed = await parseStringPromise(response.data, { explicitArray: false, trim: true });
-    const root = parsed.RESULT || parsed.result || parsed.response || parsed;
-
-    if (root.ERROR) {
-      const errMsg = root.ERROR.MESSAGE || root.ERROR.message || 'NTIS API 오류';
-      return res.status(400).json({ error: `NTIS API 오류: ${errMsg}` });
-    }
-
-    const rawItems = root.items?.item || root.body?.items?.item || root.ITEMS?.ITEM || [];
-    const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
-
-    const projects = items.map((item) => ({
-      pjtId: item.pjtId || item.projId || '',
-      pjtName: item.pjtName || item.projNm || '',
-      piName: item.piName || item.rschNm || '',
-      orgName: item.orgName || item.excOrg || '',
-      ministry: item.ministry || item.deptNm || '',
-      period: item.period || `${item.startDt || ''} ~ ${item.endDt || ''}`,
-      govFund: item.govFund || item.govBudget || '',
-      abstract: item.abstract || item.projAbst || '',
-      detailUrl: item.pjtId ? `https://www.ntis.go.kr/project/pjtInfo.do?pjtId=${item.pjtId}` : '',
-    }));
-
-    res.json({ total: projects.length, projects });
+    const { total, projects } = await ntis.searchProjects(query);
+    res.json({ total, projects });
   } catch (err) {
     console.error('[검색 오류]', err.message);
-    res.status(500).json({ error: 'NTIS 검색 중 오류가 발생했습니다.' });
+    if (err instanceof ntis.NtisUnavailableError)
+      return res.status(503).json({ error: 'NTIS 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.' });
+    if (err instanceof ntis.NtisTimeoutError)
+      return res.status(504).json({ error: 'NTIS 응답이 지연되어 시간 초과되었습니다.' });
+    if (err instanceof ntis.NtisError)
+      return res.status(502).json({ error: 'NTIS 검색 처리 중 오류가 발생했습니다.' });
+    return res.status(500).json({ error: 'NTIS 검색 중 오류가 발생했습니다.' });
   }
 });
 
