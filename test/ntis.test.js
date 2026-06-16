@@ -90,3 +90,27 @@ test('parseProjectsXml: 오류 XML → NtisError', async () => {
 test('parseProjectsXml: 잘못된 XML → NtisError', async () => {
   await assert.rejects(() => ntis.parseProjectsXml('<RESULT><broken'), ntis.NtisError);
 });
+
+const realFetch = global.fetch;
+test.afterEach(() => { global.fetch = realFetch; });
+
+test('searchProjects: 정상 호출 → 파싱 결과', async () => {
+  global.fetch = async (url) => {
+    assert.ok(url.includes('collection=project'));
+    assert.ok(url.includes('query='));
+    return { ok: true, text: async () => SINGLE_XML };
+  };
+  const { total, projects } = await ntis.searchProjects('테스트');
+  assert.strictEqual(total, 1);
+  assert.strictEqual(projects[0].pjtName, '단일 과제');
+});
+
+test('searchProjects: 연결 거부 → NtisUnavailableError', async () => {
+  global.fetch = async () => { throw new TypeError('fetch failed'); };
+  await assert.rejects(() => ntis.searchProjects('x'), ntis.NtisUnavailableError);
+});
+
+test('searchProjects: abort → NtisTimeoutError', async () => {
+  global.fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
+  await assert.rejects(() => ntis.searchProjects('x'), ntis.NtisTimeoutError);
+});
