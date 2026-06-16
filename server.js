@@ -1,8 +1,6 @@
 // server.js - NTIS 연구과제 도우미 백엔드 서버 (로컬 Ollama/Gemma 사용)
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
-const { parseStringPromise } = require('xml2js');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
