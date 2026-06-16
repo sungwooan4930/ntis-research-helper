@@ -2,7 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const path = require('path');
 const llm = require('./lib/llm');
@@ -242,8 +242,9 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     let text = '';
 
     if (ext === '.pdf') {
-      // PDF 파싱
-      const data = await pdfParse(req.file.buffer);
+      // PDF 파싱 (pdf-parse v2: PDFParse 클래스 API)
+      const parser = new PDFParse({ data: new Uint8Array(req.file.buffer) });
+      const data = await parser.getText();
       text = data.text;
     } else if (ext === '.docx' || ext === '.doc') {
       // Word 파싱
