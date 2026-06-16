@@ -92,21 +92,21 @@ function renderSearchResults(projects) {
     .join('');
 }
 
-function renderPagination(total) {
+function renderPagination(total, page) {
   const $pager = document.getElementById('searchPagination');
   const totalPages = Math.ceil((total || 0) / SEARCH_PAGE_SIZE);
   if (totalPages <= 1) { $pager.innerHTML = ''; return; }
 
   const windowSize = 10;
-  let start = Math.max(1, currentPage - 4);
+  let start = Math.max(1, page - 4);
   let end = Math.min(totalPages, start + windowSize - 1);
   start = Math.max(1, end - windowSize + 1);
 
-  let html = `<button class="page-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>‹ 이전</button>`;
+  let html = `<button class="page-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>‹ 이전</button>`;
   for (let i = start; i <= end; i++) {
-    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}" ${i === currentPage ? 'disabled' : ''}>${i}</button>`;
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}" ${i === page ? 'disabled' : ''}>${i}</button>`;
   }
-  html += `<button class="page-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>다음 ›</button>`;
+  html += `<button class="page-btn" data-page="${page + 1}" ${page === totalPages ? 'disabled' : ''}>다음 ›</button>`;
   $pager.innerHTML = html;
 }
 
@@ -133,7 +133,7 @@ async function runSearch(page) {
     checkDemo(data);
     currentPage = page;
     renderSearchResults(data.projects);
-    renderPagination(data.total);
+    renderPagination(data.total, currentPage);
     $result.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     $result.innerHTML = errorHtml(err.message || '검색 중 오류가 발생했습니다.');
@@ -156,6 +156,7 @@ document.getElementById('searchQuery').addEventListener('keydown', (e) => {
 ['searchMinistry', 'searchAgency'].forEach((id) =>
   document.getElementById(id).addEventListener('input', syncFieldDisabled)
 );
+syncFieldDisabled(); // 초기 상태 동기화
 document.getElementById('searchPagination').addEventListener('click', (e) => {
   const btn = e.target.closest('.page-btn');
   if (!btn || btn.disabled) return;
