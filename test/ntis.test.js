@@ -97,7 +97,7 @@ test.afterEach(() => { global.fetch = realFetch; });
 test('searchProjects: 정상 호출 → 파싱 결과', async () => {
   global.fetch = async (url) => {
     assert.ok(url.includes('collection=project'));
-    assert.ok(url.includes('query='));
+    assert.ok(url.includes('query=%ED%85%8C%EC%8A%A4%ED%8A%B8'), 'query must be URL-encoded Korean');
     return { ok: true, text: async () => SINGLE_XML };
   };
   const { total, projects } = await ntis.searchProjects('테스트');
@@ -113,4 +113,9 @@ test('searchProjects: 연결 거부 → NtisUnavailableError', async () => {
 test('searchProjects: abort → NtisTimeoutError', async () => {
   global.fetch = async () => { const e = new Error('aborted'); e.name = 'AbortError'; throw e; };
   await assert.rejects(() => ntis.searchProjects('x'), ntis.NtisTimeoutError);
+});
+
+test('searchProjects: HTTP 503 → NtisUnavailableError', async () => {
+  global.fetch = async () => ({ ok: false, status: 503 });
+  await assert.rejects(() => ntis.searchProjects('x'), ntis.NtisUnavailableError);
 });
