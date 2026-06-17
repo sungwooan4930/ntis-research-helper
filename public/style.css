@@ -633,3 +633,8 @@ footer a:hover {
 .diff-pre { white-space: pre-wrap; word-break: break-word; }
 .diff-add { background: #dcfce7; color: #166534; text-decoration: none; }
 .diff-del { background: #fee2e2; color: #991b1b; }
+
+/* 검색 카드 액션 */
+.card-actions { margin-top: 0.5rem; }
+.card-actions .eval-from-search { padding: 0.3rem 0.7rem; font-size: 0.82rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.card-actions .eval-from-search:hover { background: #1d4ed8; }

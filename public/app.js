@@ -103,6 +103,7 @@ wireResultActions('reviewResult', () => (lastReview ? formatReviewText(lastRevie
 const SEARCH_PAGE_SIZE = 20;
 let currentSearch = null; // 마지막 검색 옵션 보관
 let currentPage = 1;
+let currentResults = [];
 
 function collectSearchOpts() {
   return {
@@ -124,6 +125,7 @@ function syncFieldDisabled() {
 }
 
 function renderSearchResults(projects) {
+  currentResults = projects || [];
   const $result = document.getElementById('searchResult');
   if (!projects || projects.length === 0) {
     $result.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
@@ -131,7 +133,7 @@ function renderSearchResults(projects) {
   }
   $result.innerHTML = projects
     .map(
-      (p) => `
+      (p, i) => `
       <div class="project-card">
         <h3>${p.detailUrl
           ? `<a href="${p.detailUrl}" target="_blank" rel="noopener">${p.pjtName || '(과제명 없음)'}</a>`
@@ -145,6 +147,7 @@ function renderSearchResults(projects) {
           ${p.govFund ? `<span>정부투자연구비: ${Number(p.govFund).toLocaleString()}원</span>` : ''}
         </div>
         ${p.abstract ? `<div class="project-abstract">${truncate(p.abstract, 200)}</div>` : ''}
+        <div class="card-actions"><button type="button" class="eval-from-search" data-idx="${i}">이 과제로 평가</button></div>
       </div>`
     )
     .join('');
@@ -220,6 +223,34 @@ document.getElementById('searchPagination').addEventListener('click', (e) => {
   if (!btn || btn.disabled) return;
   const page = parseInt(btn.dataset.page, 10);
   if (page >= 1) runSearch(page);
+});
+
+function activateTab(name) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === name));
+}
+// 검색 결과: "이 과제로 평가"
+document.getElementById('searchResult').addEventListener('click', (e) => {
+  const btn = e.target.closest('.eval-from-search');
+  if (!btn) return;
+  const p = currentResults[parseInt(btn.dataset.idx, 10)];
+  if (!p) return;
+  const text = `「${p.pjtName || ''}」\n\n${p.abstract || ''}`.trim();
+  const ta = document.getElementById('evalContent');
+  ta.value = text;
+  ta.dispatchEvent(new Event('input'));
+  activateTab('evaluate');
+  document.getElementById('evalBtn').click();
+});
+// 검토 결과: "수정본으로 재평가"
+document.getElementById('reviewResult').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-act="reeval"]');
+  if (!btn || !lastReview) return;
+  const ta = document.getElementById('evalContent');
+  ta.value = lastReview.revisedContent || '';
+  ta.dispatchEvent(new Event('input'));
+  activateTab('evaluate');
+  document.getElementById('evalBtn').click();
 });
 
 // ===== 기능 2: 과제 평가 =====
@@ -403,6 +434,8 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
       </div>
 
       ${data.overallComment ? `<div class="eval-section"><h3>종합 평가</h3><p style="font-size:0.9rem;color:#475569">${data.overallComment}</p></div>` : ''}
+
+      <div class="result-actions"><button type="button" data-act="reeval">수정본으로 재평가</button></div>
 
       <div class="review-columns">
         <div class="review-col">
