@@ -1,4 +1,4 @@
-// server.js - NTIS 연구과제 도우미 백엔드 서버 (로컬 Ollama/Gemma 사용)
+// server.js - NTIS 연구과제 도우미 백엔드 서버 (LLM 다중 제공자: lib/llm)
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
@@ -26,7 +26,9 @@ const PORT = process.env.PORT || 3000;
 // 데모 모드: NTIS API 키가 없을 때만 더미 데이터
 const NTIS_DEMO = !process.env.NTIS_API_KEY || process.env.NTIS_API_KEY === '여기에_NTIS_인증키';
 
-console.log(`NTIS: ${NTIS_DEMO ? '데모모드' : '실제API'} | LLM: Ollama(${llm.OLLAMA_MODEL})`);
+const ACTIVE_LLM = llm.activeProviders().map((p) => p.name);
+console.log(`NTIS: ${NTIS_DEMO ? '데모모드' : '실제API'} | LLM: ${ACTIVE_LLM.length ? ACTIVE_LLM.join(',') + ` (${ACTIVE_LLM.length} active)` : '없음(키 미설정)'}`);
+
 
 // 미들웨어 설정
 app.use(express.json({ limit: '10mb' }));
@@ -64,33 +66,12 @@ const REVIEW_SCHEMA = {
 function sendLlmError(res, err, context) {
   console.error(`[${context}]`, err.message);
   if (err instanceof llm.LlmUnavailableError)
-    return res.status(503).json({ error: `Ollama 서버에 연결할 수 없습니다. \`ollama serve\` 실행 및 \`ollama pull ${llm.OLLAMA_MODEL}\`를 확인하세요.` });
+    return res.status(503).json({ error: 'AI 제공자에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.' });
   if (err instanceof llm.LlmTimeoutError)
     return res.status(504).json({ error: '모델 응답이 지연되어 시간 초과되었습니다. 입력을 줄이거나 다시 시도하세요.' });
   if (err instanceof llm.LlmParseError)
     return res.status(502).json({ error: '모델이 올바른 형식의 응답을 생성하지 못했습니다.' });
   return res.status(500).json({ error: `${context} 중 오류가 발생했습니다: ${err.message}` });
-}
-
-// 기동 시 Ollama 연결/모델 존재 점검(경고만, 기동은 계속)
-async function checkOllama() {
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 5000);
-  try {
-    const res = await fetch(`${llm.OLLAMA_HOST}/api/tags`, { signal: ac.signal });
-    if (!res.ok) { console.warn(`⚠️  Ollama 응답 비정상 (${res.status})`); return; }
-    const data = await res.json();
-    const exists = (data.models || []).some((m) =>
-      m.name === llm.OLLAMA_MODEL ||
-      m.name.startsWith(llm.OLLAMA_MODEL + ':') ||
-      m.name.startsWith(llm.OLLAMA_MODEL + '-')
-    );
-    console.log(exists ? `✅ Ollama 모델 확인: ${llm.OLLAMA_MODEL}` : `⚠️  모델 ${llm.OLLAMA_MODEL} 미설치 — 'ollama pull ${llm.OLLAMA_MODEL}' 실행 필요`);
-  } catch {
-    console.warn(`⚠️  Ollama(${llm.OLLAMA_HOST}) 연결 안 됨 — 'ollama serve' 실행 확인`);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -196,7 +177,7 @@ app.get('/api/search', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// 기능 2: 연구과제 평가 (로컬 Ollama/Gemma)
+// 기능 2: 연구과제 평가 (LLM)
 // ─────────────────────────────────────────────
 app.post('/api/evaluate', async (req, res) => {
   const { content } = req.body;
@@ -220,7 +201,7 @@ totalScore(1~10 정수), summary(종합 요약), suggestions(개선 제안 문�
 });
 
 // ─────────────────────────────────────────────
-// 기능 3: 신청서 평가 및 수정 제안 (로컬 Ollama/Gemma)
+// 기능 3: 신청서 평가 및 수정 제안 (LLM)
 // ─────────────────────────────────────────────
 app.post('/api/review', async (req, res) => {
   const { content } = req.body;
@@ -291,5 +272,4 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`✅ 서버: http://localhost:${PORT}`);
-  checkOllama();
 });

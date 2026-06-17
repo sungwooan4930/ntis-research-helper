@@ -49,3 +49,28 @@ test('generateJSON: 재시도 후에도 실패하면 LlmParseError', async () =>
   global.fetch = async () => ({ ok: true, json: async () => ({ response: 'not json' }) });
   await assert.rejects(() => llm.generateJSON('p', {}), llm.LlmParseError);
 });
+
+test('llm: 활성 제공자 0개 → LlmUnavailableError', async () => {
+  const prev = process.env.LLM_PROVIDERS;
+  process.env.LLM_PROVIDERS = 'groq'; // 키 없음 → 비활성
+  delete process.env.GROQ_API_KEY;
+  await assert.rejects(() => llm.generate('p'), llm.LlmUnavailableError);
+  process.env.LLM_PROVIDERS = prev;
+});
+
+test('llm: 첫 제공자 실패 → 다음 제공자로 폴백', async () => {
+  const prev = process.env.LLM_PROVIDERS;
+  process.env.LLM_PROVIDERS = 'groq,gemini';
+  process.env.GROQ_API_KEY = 'k1';
+  process.env.GEMINI_API_KEY = 'k2';
+  let n = 0;
+  global.fetch = async (url) => {
+    n++;
+    if (String(url).includes('groq')) return { ok: false, status: 429, text: async () => 'rate' };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '폴백성공' }] } }] }) };
+  };
+  assert.strictEqual(await llm.generate('p'), '폴백성공');
+  assert.ok(n >= 2);
+  process.env.LLM_PROVIDERS = prev;
+  delete process.env.GROQ_API_KEY; delete process.env.GEMINI_API_KEY;
+});
