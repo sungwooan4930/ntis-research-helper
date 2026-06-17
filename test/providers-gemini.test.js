@@ -1,7 +1,7 @@
 const { test, afterEach } = require('node:test');
 const assert = require('node:assert');
 const gemini = require('../lib/providers/gemini');
-const { LlmUnavailableError } = require('../lib/llm-errors');
+const { LlmUnavailableError, LlmTimeoutError } = require('../lib/llm-errors');
 
 const realFetch = global.fetch;
 afterEach(() => { global.fetch = realFetch; delete process.env.GEMINI_API_KEY; });
@@ -32,4 +32,10 @@ test('complete: 비2xx→LlmUnavailableError', async () => {
   process.env.GEMINI_API_KEY = 'k';
   global.fetch = async () => ({ ok: false, status: 429, text: async () => 'rate' });
   await assert.rejects(() => gemini.complete({ prompt: 'p' }), LlmUnavailableError);
+});
+
+test('complete: abort→LlmTimeoutError', async () => {
+  process.env.GEMINI_API_KEY = 'k';
+  global.fetch = async () => { const e = new Error('a'); e.name = 'AbortError'; throw e; };
+  await assert.rejects(() => gemini.complete({ prompt: 'p' }), LlmTimeoutError);
 });
