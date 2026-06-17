@@ -119,3 +119,43 @@ test('searchProjects: HTTP 503 → NtisUnavailableError', async () => {
   global.fetch = async () => ({ ok: false, status: 503 });
   await assert.rejects(() => ntis.searchProjects('x'), ntis.NtisUnavailableError);
 });
+
+test('buildSearchParams: 기본값', () => {
+  const p = ntis.buildSearchParams('인공지능', {});
+  assert.strictEqual(p.get('collection'), 'project');
+  assert.strictEqual(p.get('query'), '인공지능');
+  assert.strictEqual(p.get('displayCount'), '20');
+  assert.strictEqual(p.get('startPosition'), '1');
+  assert.strictEqual(p.get('cmbnApiYn'), 'Y');
+  assert.strictEqual(p.get('searchField'), '');
+  assert.strictEqual(p.get('sortby'), '');
+  assert.strictEqual(p.get('addQuery'), null);
+});
+
+test('buildSearchParams: 필드/정렬', () => {
+  const p = ntis.buildSearchParams('인공지능', { field: 'TI', sort: 'latest' });
+  assert.strictEqual(p.get('searchField'), 'TI');
+  assert.strictEqual(p.get('sortby'), 'DATE/DESC');
+});
+
+test('buildSearchParams: 연도 범위/단일', () => {
+  assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: '2020', yearTo: '2023' }).get('addQuery'), 'PY=2020/MORE,2023/UNDER');
+  assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: '2020' }).get('addQuery'), 'PY=2020/MORE');
+  assert.strictEqual(ntis.buildSearchParams('x', { yearTo: '2023' }).get('addQuery'), 'PY=2023/UNDER');
+});
+
+test('buildSearchParams: 잘못된 연도 무시', () => {
+  assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: 'abc', yearTo: '20' }).get('addQuery'), null);
+  assert.strictEqual(ntis.buildSearchParams('x', { yearFrom: '20230' }).get('addQuery'), null); // 5자리 무시
+});
+
+test('buildSearchParams: 부처/기관 query 결합 + 필드 BI 강제', () => {
+  const p = ntis.buildSearchParams('인공지능', { field: 'TI', ministry: '과학기술정보통신부', agency: '서울대학교' });
+  assert.strictEqual(p.get('query'), '인공지능 "과학기술정보통신부" "서울대학교"');
+  assert.strictEqual(p.get('searchField'), 'BI');
+});
+
+test('buildSearchParams: 페이징 반영', () => {
+  const p = ntis.buildSearchParams('x', { startPosition: 21, displayCount: 20 });
+  assert.strictEqual(p.get('startPosition'), '21');
+});

@@ -41,38 +41,44 @@ function truncate(str, max) {
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
-// ===== 기능 1: 유사 과제 검색 =====
-document.getElementById('searchBtn').addEventListener('click', async () => {
-  const query = document.getElementById('searchQuery').value.trim();
-  const $result = document.getElementById('searchResult');
+// ===== 기능 1: 유사 과제 검색 (고급) =====
+const SEARCH_PAGE_SIZE = 20;
+let currentSearch = null; // 마지막 검색 옵션 보관
+let currentPage = 1;
 
-  if (!query) {
-    $result.innerHTML = errorHtml('검색어를 입력해주세요.');
+function collectSearchOpts() {
+  return {
+    query: document.getElementById('searchQuery').value.trim(),
+    field: document.getElementById('searchField').value,
+    sort: document.getElementById('searchSort').value,
+    yearFrom: document.getElementById('searchYearFrom').value.trim(),
+    yearTo: document.getElementById('searchYearTo').value.trim(),
+    ministry: document.getElementById('searchMinistry').value.trim(),
+    agency: document.getElementById('searchAgency').value.trim(),
+  };
+}
+
+// 부처/기관 입력 시 분야 select 비활성(전체 고정) + 안내
+function syncFieldDisabled() {
+  const hasFilter = !!(document.getElementById('searchMinistry').value.trim() || document.getElementById('searchAgency').value.trim());
+  document.getElementById('searchField').disabled = hasFilter;
+  document.getElementById('searchFieldNote').classList.toggle('hidden', !hasFilter);
+}
+
+function renderSearchResults(projects) {
+  const $result = document.getElementById('searchResult');
+  if (!projects || projects.length === 0) {
+    $result.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
     return;
   }
-
-  showLoading();
-  try {
-    const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.error);
-    checkDemo(data);
-
-    if (data.projects.length === 0) {
-      $result.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
-      return;
-    }
-
-    // 검색 결과 카드 렌더링
-    $result.innerHTML = data.projects
-      .map(
-        (p) => `
+  $result.innerHTML = projects
+    .map(
+      (p) => `
       <div class="project-card">
         <h3>${p.detailUrl
-            ? `<a href="${p.detailUrl}" target="_blank" rel="noopener">${p.pjtName || '(과제명 없음)'}</a>`
-            : (p.pjtName || '(과제명 없음)')
-          }</h3>
+          ? `<a href="${p.detailUrl}" target="_blank" rel="noopener">${p.pjtName || '(과제명 없음)'}</a>`
+          : (p.pjtName || '(과제명 없음)')
+        }</h3>
         <div class="project-meta">
           ${p.piName ? `<span>연구책임자: ${p.piName}</span>` : ''}
           ${p.orgName ? `<span>수행기관: ${p.orgName}</span>` : ''}
@@ -82,18 +88,80 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
         </div>
         ${p.abstract ? `<div class="project-abstract">${truncate(p.abstract, 200)}</div>` : ''}
       </div>`
-      )
-      .join('');
+    )
+    .join('');
+}
+
+function renderPagination(total, page) {
+  const $pager = document.getElementById('searchPagination');
+  const totalPages = Math.ceil((total || 0) / SEARCH_PAGE_SIZE);
+  if (totalPages <= 1) { $pager.innerHTML = ''; return; }
+
+  const windowSize = 10;
+  let start = Math.max(1, page - 4);
+  let end = Math.min(totalPages, start + windowSize - 1);
+  start = Math.max(1, end - windowSize + 1);
+
+  let html = `<button class="page-btn" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>‹ 이전</button>`;
+  for (let i = start; i <= end; i++) {
+    html += `<button class="page-btn ${i === page ? 'active' : ''}" data-page="${i}" ${i === page ? 'disabled' : ''}>${i}</button>`;
+  }
+  html += `<button class="page-btn" data-page="${page + 1}" ${page === totalPages ? 'disabled' : ''}>다음 ›</button>`;
+  $pager.innerHTML = html;
+}
+
+async function runSearch(page) {
+  const $result = document.getElementById('searchResult');
+  const $pager = document.getElementById('searchPagination');
+  if (!currentSearch || !currentSearch.query) {
+    $result.innerHTML = errorHtml('검색어를 입력해주세요.');
+    $pager.innerHTML = '';
+    return;
+  }
+
+  const start = (page - 1) * SEARCH_PAGE_SIZE + 1;
+  const params = new URLSearchParams({ query: currentSearch.query, start: String(start) });
+  ['field', 'sort', 'yearFrom', 'yearTo', 'ministry', 'agency'].forEach((k) => {
+    if (currentSearch[k]) params.set(k, currentSearch[k]);
+  });
+
+  showLoading();
+  try {
+    const res = await fetch('/api/search?' + params.toString());
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    checkDemo(data);
+    currentPage = page;
+    renderSearchResults(data.projects);
+    renderPagination(data.total, currentPage);
+    $result.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     $result.innerHTML = errorHtml(err.message || '검색 중 오류가 발생했습니다.');
+    $pager.innerHTML = '';
   } finally {
     hideLoading();
   }
-});
+}
 
-// Enter 키로 검색 실행
+function startNewSearch() {
+  currentSearch = collectSearchOpts();
+  currentPage = 1;
+  runSearch(1);
+}
+
+document.getElementById('searchBtn').addEventListener('click', startNewSearch);
 document.getElementById('searchQuery').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('searchBtn').click();
+  if (e.key === 'Enter') startNewSearch();
+});
+['searchMinistry', 'searchAgency'].forEach((id) =>
+  document.getElementById(id).addEventListener('input', syncFieldDisabled)
+);
+syncFieldDisabled(); // 초기 상태 동기화
+document.getElementById('searchPagination').addEventListener('click', (e) => {
+  const btn = e.target.closest('.page-btn');
+  if (!btn || btn.disabled) return;
+  const page = parseInt(btn.dataset.page, 10);
+  if (page >= 1) runSearch(page);
 });
 
 // ===== 기능 2: 과제 평가 =====

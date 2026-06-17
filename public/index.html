@@ -58,7 +58,32 @@
         <input type="text" id="searchQuery" placeholder="예: 인공지능 기반 신약 개발" />
         <button id="searchBtn">검색</button>
       </div>
+      <div class="search-options">
+        <label>분야
+          <select id="searchField">
+            <option value="">전체</option>
+            <option value="TI">과제명</option>
+            <option value="AU">연구책임자</option>
+            <option value="KW">키워드</option>
+          </select>
+        </label>
+        <label>정렬
+          <select id="searchSort">
+            <option value="">관련도순</option>
+            <option value="latest">최신순</option>
+          </select>
+        </label>
+        <label>연도
+          <input type="number" id="searchYearFrom" class="year-input" placeholder="시작" min="1900" max="2100" />
+          <span>~</span>
+          <input type="number" id="searchYearTo" class="year-input" placeholder="끝" min="1900" max="2100" />
+        </label>
+        <label>부처 <input type="text" id="searchMinistry" placeholder="예: 과학기술정보통신부" /></label>
+        <label>수행기관 <input type="text" id="searchAgency" placeholder="예: 서울대학교" /></label>
+        <span id="searchFieldNote" class="field-note hidden">부처/기관 필터 사용 시 전체 분야로 검색됩니다.</span>
+      </div>
       <div id="searchResult" class="result"></div>
+      <div id="searchPagination" class="pagination"></div>
     </section>
 
     <!-- ==================== 기능 2: 과제 평가 ==================== -->
