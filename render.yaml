@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ntis-research-helper
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NTIS_API_KEY
+        sync: false
+      - key: LLM_PROVIDERS
+        value: groq,gemini,openrouter
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false

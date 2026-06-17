@@ -7,6 +7,7 @@ const mammoth = require('mammoth');
 const path = require('path');
 const llm = require('./lib/llm');
 const ntis = require('./lib/ntis');
+const rateLimit = require('./lib/ratelimit');
 
 // 파일 업로드 설정 (메모리 저장, 최대 10MB)
 const upload = multer({
@@ -21,6 +22,11 @@ const upload = multer({
 });
 
 const app = express();
+app.set('trust proxy', 1); // Render 등 프록시 뒤에서 실제 클라이언트 IP 인식
+
+const llmLimiter = rateLimit({ windowMs: 60000, max: Number(process.env.RATE_LIMIT_LLM) || 10, message: '요청이 많습니다. 잠시 후 다시 시도해주세요.' });
+const searchLimiter = rateLimit({ windowMs: 60000, max: Number(process.env.RATE_LIMIT_SEARCH) || 30, message: '검색 요청이 많습니다. 잠시 후 다시 시도해주세요.' });
+
 const PORT = process.env.PORT || 3000;
 
 // 데모 모드: NTIS API 키가 없을 때만 더미 데이터
@@ -138,7 +144,7 @@ const DUMMY_PROJECTS = [
 // ─────────────────────────────────────────────
 // 기능 1: NTIS 유사 과제 검색
 // ─────────────────────────────────────────────
-app.get('/api/search', async (req, res) => {
+app.get('/api/search', searchLimiter, async (req, res) => {
   const { query } = req.query;
   if (!query) return res.status(400).json({ error: '검색어를 입력해주세요.' });
 
@@ -179,7 +185,7 @@ app.get('/api/search', async (req, res) => {
 // ─────────────────────────────────────────────
 // 기능 2: 연구과제 평가 (LLM)
 // ─────────────────────────────────────────────
-app.post('/api/evaluate', async (req, res) => {
+app.post('/api/evaluate', llmLimiter, async (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: '평가할 연구과제 내용을 입력해주세요.' });
 
@@ -203,7 +209,7 @@ totalScore(1~10 정수), summary(종합 요약), suggestions(개선 제안 문�
 // ─────────────────────────────────────────────
 // 기능 3: 신청서 평가 및 수정 제안 (LLM)
 // ─────────────────────────────────────────────
-app.post('/api/review', async (req, res) => {
+app.post('/api/review', llmLimiter, async (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: '신청서 내용을 입력해주세요.' });
 

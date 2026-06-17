@@ -83,3 +83,20 @@ npm run dev
 ## 라이선스
 
 MIT
+
+## 배포 (Render 무료 호스팅)
+
+> 평가·검토는 클라우드 LLM 제공자(Groq/Gemini/OpenRouter)를 사용합니다. Render에서는 로컬 Ollama를 쓰지 않습니다.
+
+1. [Render](https://render.com) 가입 → **New → Blueprint** → 이 GitHub 저장소 연결(`render.yaml` 자동 인식).
+2. 환경변수 입력(대시보드, `sync:false` 항목): `NTIS_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`. (`LLM_PROVIDERS`는 `groq,gemini,openrouter`로 기본 설정됨)
+3. Deploy. 배포 후 발급된 `https://<앱>.onrender.com` 으로 접속.
+4. 무료 플랜은 15분 유휴 시 슬립 → 첫 요청이 30~60초 걸릴 수 있습니다.
+
+### 광고(AdSense) 적용
+- `public/index.html`의 `ca-pub-YOUR_ADSENSE_CLIENT_ID`(및 `YOUR_AD_SLOT_*`)를 승인받은 실제 값으로 교체.
+- AdSense 신청 시 사이트 URL과 함께 `/privacy.html`(개인정보처리방침), `/about.html`(소개)이 제공됩니다.
+- `public/privacy.html`의 문의 이메일 placeholder를 실제 주소로 교체.
+
+### Rate limit
+- 기본: 평가/검토 분당 10회/IP, 검색 분당 30회/IP. `RATE_LIMIT_LLM`/`RATE_LIMIT_SEARCH` 환경변수로 조정.
