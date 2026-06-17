@@ -1,4 +1,4 @@
-# 국가R&D 과제 도우미
+# NTIS 과제 도우미
 
 NTIS Open API와 로컬 Ollama (Gemma 3 12B)를 활용한 국가R&D 과제 신청 지원 웹서비스입니다.
 
