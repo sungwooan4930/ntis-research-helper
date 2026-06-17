@@ -68,6 +68,12 @@ const REVIEW_SCHEMA = {
   required: ['strengths', 'weaknesses', 'overallComment', 'revisedContent'],
 };
 
+const KEYWORDS_SCHEMA = {
+  type: 'object',
+  properties: { keywords: { type: 'array', items: { type: 'string' } } },
+  required: ['keywords'],
+};
+
 // LLM 예외를 적절한 HTTP 응답으로 매핑
 function sendLlmError(res, err, context) {
   console.error(`[${context}]`, err.message);
@@ -227,6 +233,28 @@ revisedContent(수정된 신청서 전문)를 한국어로 채우세요.`;
     res.json(review);
   } catch (err) {
     sendLlmError(res, err, '신청서 리뷰');
+  }
+});
+
+// 자연어 → NTIS 검색 키워드 추천 (LLM)
+app.post('/api/search-assist', llmLimiter, async (req, res) => {
+  const { description } = req.body;
+  if (!description) return res.status(400).json({ error: '연구 설명을 입력해주세요.' });
+
+  try {
+    const prompt = `당신은 국가R&D 과제 검색 도우미입니다.
+아래 연구 설명에서 NTIS 과제 검색에 적합한 핵심 키워드 3~5개를 한국어로 추출하세요.
+너무 일반적인 단어는 피하고, 검색에 유용한 기술어·분야어 위주로.
+
+연구 설명:
+${description}
+
+keywords 배열만 채우세요.`;
+    const out = await llm.generateJSON(prompt, KEYWORDS_SCHEMA);
+    const keywords = Array.isArray(out && out.keywords) ? out.keywords.filter((k) => typeof k === 'string' && k.trim()) : [];
+    res.json({ keywords });
+  } catch (err) {
+    sendLlmError(res, err, '키워드 추천');
   }
 });
 
