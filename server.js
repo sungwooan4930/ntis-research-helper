@@ -1,4 +1,4 @@
-// server.js - NTIS 연구과제 도우미 백엔드 서버 (로컬 Ollama/Gemma 사용)
+// server.js - NTIS 연구과제 도우미 백엔드 서버 (LLM 다중 제공자: lib/llm)
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
@@ -177,7 +177,7 @@ app.get('/api/search', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// 기능 2: 연구과제 평가 (로컬 Ollama/Gemma)
+// 기능 2: 연구과제 평가 (LLM)
 // ─────────────────────────────────────────────
 app.post('/api/evaluate', async (req, res) => {
   const { content } = req.body;
@@ -201,7 +201,7 @@ totalScore(1~10 정수), summary(종합 요약), suggestions(개선 제안 문�
 });
 
 // ─────────────────────────────────────────────
-// 기능 3: 신청서 평가 및 수정 제안 (로컬 Ollama/Gemma)
+// 기능 3: 신청서 평가 및 수정 제안 (LLM)
 // ─────────────────────────────────────────────
 app.post('/api/review', async (req, res) => {
   const { content } = req.body;
