@@ -602,3 +602,18 @@ footer a:hover {
 }
 .pagination .page-btn:disabled { cursor: default; opacity: 0.5; }
 .pagination .page-btn.active:disabled { opacity: 1; }
+
+/* ===== 헤더 가이드 네비게이션 ===== */
+.header-guide-links {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.header-guide-links a {
+  color: #fff;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+.header-guide-links a:hover {
+  color: #e0ecff;
+}
