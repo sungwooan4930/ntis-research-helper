@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ntis-research-helper.onrender.com/sitemap.xml
