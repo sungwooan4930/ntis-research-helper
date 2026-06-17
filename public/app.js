@@ -41,6 +41,54 @@ function truncate(str, max) {
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
+// ===== 결과 액션 (복사/다운로드/인쇄) =====
+
+// HTML 이스케이프
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// 평가 결과 → 텍스트
+function formatEvalText(d) {
+  const cat = { clarity: '명확성', originality: '독창성', feasibility: '실현가능성', impact: '기대효과' };
+  let t = `[과제 평가 결과]\n총점: ${d.totalScore ?? '-'} / 10\n요약: ${d.summary || ''}\n\n`;
+  for (const k of Object.keys(cat)) t += `- ${cat[k]} (${d[k] && d[k].score != null ? d[k].score : '-'}/10): ${d[k] ? d[k].comment || '' : ''}\n`;
+  t += `\n개선 제안:\n` + (d.suggestions || []).map((s, i) => `${i + 1}. ${s}`).join('\n');
+  return t;
+}
+// 검토 결과 → 텍스트
+function formatReviewText(d) {
+  return `[신청서 검토 결과]\n강점: ${(d.strengths || []).join(', ')}\n약점: ${(d.weaknesses || []).join(', ')}\n종합: ${d.overallComment || ''}\n\n[수정 제안 전문]\n${d.revisedContent || ''}`;
+}
+function resultActionsHtml() {
+  return `<div class="result-actions"><button type="button" data-act="copy">복사</button><button type="button" data-act="download">다운로드</button><button type="button" data-act="print">인쇄</button></div>`;
+}
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function wireResultActions(containerId, getText, filename) {
+  const el = document.getElementById(containerId);
+  el.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    if (act !== 'copy' && act !== 'download' && act !== 'print') return;
+    const text = getText();
+    if (!text) return;
+    if (act === 'copy') {
+      try { await navigator.clipboard.writeText(text); btn.textContent = '복사됨'; setTimeout(() => (btn.textContent = '복사'), 1500); }
+      catch { alert('복사를 지원하지 않는 브라우저입니다. 직접 선택해 복사하세요.'); }
+    } else if (act === 'download') { downloadText(filename, text); }
+    else if (act === 'print') { window.print(); }
+  });
+}
+let lastEval = null, lastReview = null;
+wireResultActions('evalResult', () => (lastEval ? formatEvalText(lastEval) : ''), '과제평가.txt');
+wireResultActions('reviewResult', () => (lastReview ? formatReviewText(lastReview) : ''), '신청서검토.txt');
+
 // ===== 기능 1: 유사 과제 검색 (고급) =====
 const SEARCH_PAGE_SIZE = 20;
 let currentSearch = null; // 마지막 검색 옵션 보관
@@ -185,6 +233,7 @@ document.getElementById('evalBtn').addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(data.error);
     checkDemo(data);
+    lastEval = data;
 
     // 항목별 평가 카드 + 종합 점수 + 개선 제안 렌더링
     const categories = [
@@ -194,7 +243,7 @@ document.getElementById('evalBtn').addEventListener('click', async () => {
       { key: 'impact', label: '기대 효과' },
     ];
 
-    $result.innerHTML = `
+    $result.innerHTML = `${resultActionsHtml()}
       <div class="eval-section">
         <div class="total-score">${data.totalScore}<small> / 10</small></div>
         <p style="text-align:center;color:#64748b;margin-bottom:0.5rem">${data.summary || ''}</p>
@@ -325,9 +374,10 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(data.error);
     checkDemo(data);
+    lastReview = data;
 
     // 강점/약점 태그 + 원본/수정본 나란히 표시
-    $result.innerHTML = `
+    $result.innerHTML = `${resultActionsHtml()}
       <div class="eval-section">
         <h3>강점</h3>
         <div>${(data.strengths || []).map((s) => `<span class="tag-good">${s}</span>`).join('')}</div>

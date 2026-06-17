@@ -617,3 +617,14 @@ footer a:hover {
 .header-guide-links a:hover {
   color: #e0ecff;
 }
+
+/* 결과 액션바 */
+.result-actions { display: flex; gap: 0.4rem; justify-content: flex-end; margin-bottom: 0.6rem; }
+.result-actions button { padding: 0.3rem 0.7rem; font-size: 0.82rem; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; }
+.result-actions button:hover { background: #e2e8f0; }
+/* 인쇄: 결과만 보이게 */
+@media print {
+  header, footer, .tabs, .demo-banner, .guide, .input-group, .search-options, .pagination, textarea, .upload-area, .upload-divider, button, .result-actions, #loading, .header-guide-links, .input-aux, .assist-box { display: none !important; }
+  .panel:not(.active) { display: none; }
+  .result { margin: 0; }
+}
