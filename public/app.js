@@ -253,6 +253,51 @@ document.getElementById('reviewResult').addEventListener('click', (e) => {
   document.getElementById('evalBtn').click();
 });
 
+// ===== 글자수 카운터 =====
+function bindCounter(textareaId, countId) {
+  const ta = document.getElementById(textareaId), c = document.getElementById(countId);
+  if (!ta || !c) return;
+  const upd = () => { c.textContent = `${ta.value.length}자`; };
+  ta.addEventListener('input', upd); upd();
+}
+bindCounter('evalContent', 'evalCount');
+bindCounter('reviewContent', 'reviewCount');
+
+// ===== 예시 채우기 =====
+const EVAL_SAMPLE = '본 연구는 딥러닝 기반으로 단백질-리간드 결합 친화도를 예측하여 신약 후보물질을 발굴하고, 강화학습으로 분자 구조를 최적화한다. 3년간 임상 전 단계 후보물질 5종 도출을 목표로 한다.';
+const REVIEW_SAMPLE = '본 연구는 인공지능을 활용하여 의료 영상을 분석하는 시스템을 개발한다. 딥러닝으로 CT·MRI에서 병변을 자동 검출하여 진단 정확도를 높인다. 연구비 5억원, 기간 2년.';
+document.getElementById('evalExample').addEventListener('click', () => {
+  const ta = document.getElementById('evalContent'); ta.value = EVAL_SAMPLE; ta.dispatchEvent(new Event('input'));
+});
+document.getElementById('reviewExample').addEventListener('click', () => {
+  const ta = document.getElementById('reviewContent'); ta.value = REVIEW_SAMPLE; ta.dispatchEvent(new Event('input'));
+});
+
+// ===== AI 키워드 추천 =====
+document.getElementById('assistBtn').addEventListener('click', async () => {
+  const description = document.getElementById('assistInput').value.trim();
+  const $chips = document.getElementById('assistChips');
+  if (!description) { $chips.innerHTML = errorHtml('연구 내용을 입력해주세요.'); return; }
+  showLoading();
+  try {
+    const res = await fetch('/api/search-assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    const kws = data.keywords || [];
+    $chips.innerHTML = kws.length
+      ? kws.map((k) => `<button type="button" class="chip" data-kw="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('')
+      : '<span class="empty-msg">추천 키워드가 없습니다.</span>';
+  } catch (err) {
+    $chips.innerHTML = errorHtml(err.message || '키워드 추천 중 오류가 발생했습니다.');
+  } finally { hideLoading(); }
+});
+document.getElementById('assistChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.getElementById('searchQuery').value = chip.dataset.kw;
+  startNewSearch();
+});
+
 // ===== 기능 2: 과제 평가 =====
 document.getElementById('evalBtn').addEventListener('click', async () => {
   const content = document.getElementById('evalContent').value.trim();

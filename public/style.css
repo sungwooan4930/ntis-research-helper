@@ -638,3 +638,15 @@ footer a:hover {
 .card-actions { margin-top: 0.5rem; }
 .card-actions .eval-from-search { padding: 0.3rem 0.7rem; font-size: 0.82rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 .card-actions .eval-from-search:hover { background: #1d4ed8; }
+
+/* 입력 보조 */
+.input-aux { display: flex; align-items: center; gap: 0.6rem; margin: 0.3rem 0 0.8rem; }
+.aux-btn { padding: 0.3rem 0.7rem; font-size: 0.82rem; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; }
+.char-count { font-size: 0.8rem; color: #94a3b8; margin-left: auto; }
+/* 키워드 추천 */
+.assist-box { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 1rem; }
+.assist-box input { flex: 1; min-width: 12rem; padding: 0.5rem 0.7rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+.assist-box #assistBtn { padding: 0.5rem 0.9rem; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
+.assist-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; width: 100%; }
+.assist-chips .chip { padding: 0.35rem 0.7rem; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+.assist-chips .chip:hover { background: #dbeafe; }
