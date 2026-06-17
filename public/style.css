@@ -628,3 +628,8 @@ footer a:hover {
   .panel:not(.active) { display: none; }
   .result { margin: 0; }
 }
+
+/* diff 하이라이트 */
+.diff-pre { white-space: pre-wrap; word-break: break-word; }
+.diff-add { background: #dcfce7; color: #166534; text-decoration: none; }
+.diff-del { background: #fee2e2; color: #991b1b; }

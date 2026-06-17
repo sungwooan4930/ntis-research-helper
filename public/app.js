@@ -47,6 +47,16 @@ function truncate(str, max) {
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+// diff ops를 측면별 HTML로 (original: eq+del, revised: eq+add)
+function renderDiffHtml(ops, side) {
+  return ops.map((o) => {
+    const safe = escapeHtml(o.text);
+    if (o.type === 'eq') return safe;
+    if (side === 'original' && o.type === 'del') return `<del class="diff-del">${safe}</del>`;
+    if (side === 'revised' && o.type === 'add') return `<ins class="diff-add">${safe}</ins>`;
+    return '';
+  }).join('');
+}
 // 평가 결과 → 텍스트
 function formatEvalText(d) {
   const cat = { clarity: '명확성', originality: '독창성', feasibility: '실현가능성', impact: '기대효과' };
@@ -376,6 +386,10 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
     checkDemo(data);
     lastReview = data;
 
+    const _ops = (typeof diffWords === 'function') ? diffWords(content, data.revisedContent || '') : null;
+    const origHtml = _ops ? renderDiffHtml(_ops, 'original') : escapeHtml(content);
+    const revHtml = _ops ? renderDiffHtml(_ops, 'revised') : escapeHtml(data.revisedContent || '');
+
     // 강점/약점 태그 + 원본/수정본 나란히 표시
     $result.innerHTML = `${resultActionsHtml()}
       <div class="eval-section">
@@ -393,11 +407,11 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
       <div class="review-columns">
         <div class="review-col">
           <h3>원본 신청서</h3>
-          <pre>${content}</pre>
+          <pre class="diff-pre">${origHtml}</pre>
         </div>
         <div class="review-col">
           <h3>수정 제안</h3>
-          <pre>${data.revisedContent || ''}</pre>
+          <pre class="diff-pre">${revHtml}</pre>
         </div>
       </div>`;
   } catch (err) {
