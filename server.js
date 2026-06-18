@@ -258,6 +258,17 @@ keywords 배열만 채우세요.`;
   }
 });
 
+// 임시 진단: 이 서버가 외부로 나갈 때 쓰는 outbound IP 확인 (NTIS IP 등록용)
+app.get('/api/whoami', async (req, res) => {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    res.json({ outboundIp: d.ip });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // ─────────────────────────────────────────────
 // 파일 업로드 → 텍스트 추출
 // ─────────────────────────────────────────────
