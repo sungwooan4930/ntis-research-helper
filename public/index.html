@@ -91,6 +91,11 @@
         <label>수행기관 <input type="text" id="searchAgency" placeholder="예: 서울대학교" /></label>
         <span id="searchFieldNote" class="field-note hidden">부처/기관 필터 사용 시 전체 분야로 검색됩니다.</span>
       </div>
+      <div class="assist-box">
+        <input type="text" id="assistInput" placeholder="연구 내용을 자연어로 적으면 키워드를 추천합니다" />
+        <button type="button" id="assistBtn">AI 키워드 추천</button>
+        <div id="assistChips" class="assist-chips"></div>
+      </div>
       <div id="searchResult" class="result"></div>
       <div id="searchPagination" class="pagination"></div>
     </section>
@@ -101,6 +106,7 @@
         <strong>사용법:</strong> 연구과제 내용(목적, 방법, 기대효과 등)을 입력하면 AI가 항목별로 평가하고 개선점을 제안합니다.
       </div>
       <textarea id="evalContent" rows="10" placeholder="연구과제 내용을 입력하세요..."></textarea>
+      <div class="input-aux"><button type="button" id="evalExample" class="aux-btn">예시 채우기</button><span class="char-count" id="evalCount">0자</span></div>
       <button id="evalBtn">평가 요청</button>
       <div id="evalResult" class="result"></div>
     </section>
@@ -135,6 +141,7 @@
       </div>
 
       <textarea id="reviewContent" rows="8" placeholder="연구과제 신청서 내용을 붙여넣으세요..."></textarea>
+      <div class="input-aux"><button type="button" id="reviewExample" class="aux-btn">예시 채우기</button><span class="char-count" id="reviewCount">0자</span></div>
       <button id="reviewBtn">리뷰 요청</button>
       <div id="reviewResult" class="result"></div>
     </section>
@@ -153,6 +160,7 @@
     <p><a href="/">홈</a> · <a href="/about.html">소개</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/guide-proposal.html">신청서 작성법</a> · <a href="/guide-ntis-search.html">NTIS 검색 활용법</a> · <a href="/guide-ai-review.html">AI 검토 활용법</a> · <a href="/faq.html">FAQ</a> · Powered by <a href="https://www.ntis.go.kr" target="_blank" rel="noopener">NTIS Open API</a></p>
   </footer>
 
+  <script src="/diff.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

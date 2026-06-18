@@ -41,10 +41,69 @@ function truncate(str, max) {
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
+// ===== 결과 액션 (복사/다운로드/인쇄) =====
+
+// HTML 이스케이프
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// diff ops를 측면별 HTML로 (original: eq+del, revised: eq+add)
+function renderDiffHtml(ops, side) {
+  return ops.map((o) => {
+    const safe = escapeHtml(o.text);
+    if (o.type === 'eq') return safe;
+    if (side === 'original' && o.type === 'del') return `<del class="diff-del">${safe}</del>`;
+    if (side === 'revised' && o.type === 'add') return `<ins class="diff-add">${safe}</ins>`;
+    return '';
+  }).join('');
+}
+// 평가 결과 → 텍스트
+function formatEvalText(d) {
+  const cat = { clarity: '명확성', originality: '독창성', feasibility: '실현가능성', impact: '기대효과' };
+  let t = `[과제 평가 결과]\n총점: ${d.totalScore ?? '-'} / 10\n요약: ${d.summary || ''}\n\n`;
+  for (const k of Object.keys(cat)) t += `- ${cat[k]} (${d[k] && d[k].score != null ? d[k].score : '-'}/10): ${d[k] ? d[k].comment || '' : ''}\n`;
+  t += `\n개선 제안:\n` + (d.suggestions || []).map((s, i) => `${i + 1}. ${s}`).join('\n');
+  return t;
+}
+// 검토 결과 → 텍스트
+function formatReviewText(d) {
+  return `[신청서 검토 결과]\n강점: ${(d.strengths || []).join(', ')}\n약점: ${(d.weaknesses || []).join(', ')}\n종합: ${d.overallComment || ''}\n\n[수정 제안 전문]\n${d.revisedContent || ''}`;
+}
+function resultActionsHtml() {
+  return `<div class="result-actions"><button type="button" data-act="copy">복사</button><button type="button" data-act="download">다운로드</button><button type="button" data-act="print">인쇄</button></div>`;
+}
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function wireResultActions(containerId, getText, filename) {
+  const el = document.getElementById(containerId);
+  el.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const act = btn.dataset.act;
+    if (act !== 'copy' && act !== 'download' && act !== 'print') return;
+    const text = getText();
+    if (!text) return;
+    if (act === 'copy') {
+      try { await navigator.clipboard.writeText(text); btn.textContent = '복사됨'; setTimeout(() => (btn.textContent = '복사'), 1500); }
+      catch { alert('복사를 지원하지 않는 브라우저입니다. 직접 선택해 복사하세요.'); }
+    } else if (act === 'download') { downloadText(filename, text); }
+    else if (act === 'print') { window.print(); }
+  });
+}
+let lastEval = null, lastReview = null;
+wireResultActions('evalResult', () => (lastEval ? formatEvalText(lastEval) : ''), '과제평가.txt');
+wireResultActions('reviewResult', () => (lastReview ? formatReviewText(lastReview) : ''), '신청서검토.txt');
+
 // ===== 기능 1: 유사 과제 검색 (고급) =====
 const SEARCH_PAGE_SIZE = 20;
 let currentSearch = null; // 마지막 검색 옵션 보관
 let currentPage = 1;
+let currentResults = [];
 
 function collectSearchOpts() {
   return {
@@ -66,6 +125,7 @@ function syncFieldDisabled() {
 }
 
 function renderSearchResults(projects) {
+  currentResults = projects || [];
   const $result = document.getElementById('searchResult');
   if (!projects || projects.length === 0) {
     $result.innerHTML = '<div class="empty-msg">검색 결과가 없습니다.</div>';
@@ -73,7 +133,7 @@ function renderSearchResults(projects) {
   }
   $result.innerHTML = projects
     .map(
-      (p) => `
+      (p, i) => `
       <div class="project-card">
         <h3>${p.detailUrl
           ? `<a href="${p.detailUrl}" target="_blank" rel="noopener">${p.pjtName || '(과제명 없음)'}</a>`
@@ -87,6 +147,7 @@ function renderSearchResults(projects) {
           ${p.govFund ? `<span>정부투자연구비: ${Number(p.govFund).toLocaleString()}원</span>` : ''}
         </div>
         ${p.abstract ? `<div class="project-abstract">${truncate(p.abstract, 200)}</div>` : ''}
+        <div class="card-actions"><button type="button" class="eval-from-search" data-idx="${i}">이 과제로 평가</button></div>
       </div>`
     )
     .join('');
@@ -164,6 +225,79 @@ document.getElementById('searchPagination').addEventListener('click', (e) => {
   if (page >= 1) runSearch(page);
 });
 
+function activateTab(name) {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === name));
+}
+// 검색 결과: "이 과제로 평가"
+document.getElementById('searchResult').addEventListener('click', (e) => {
+  const btn = e.target.closest('.eval-from-search');
+  if (!btn) return;
+  const p = currentResults[parseInt(btn.dataset.idx, 10)];
+  if (!p) return;
+  const text = `「${p.pjtName || ''}」\n\n${p.abstract || ''}`.trim();
+  const ta = document.getElementById('evalContent');
+  ta.value = text;
+  ta.dispatchEvent(new Event('input'));
+  activateTab('evaluate');
+  document.getElementById('evalBtn').click();
+});
+// 검토 결과: "수정본으로 재평가"
+document.getElementById('reviewResult').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-act="reeval"]');
+  if (!btn || !lastReview) return;
+  const ta = document.getElementById('evalContent');
+  ta.value = lastReview.revisedContent || '';
+  ta.dispatchEvent(new Event('input'));
+  activateTab('evaluate');
+  document.getElementById('evalBtn').click();
+});
+
+// ===== 글자수 카운터 =====
+function bindCounter(textareaId, countId) {
+  const ta = document.getElementById(textareaId), c = document.getElementById(countId);
+  if (!ta || !c) return;
+  const upd = () => { c.textContent = `${ta.value.length}자`; };
+  ta.addEventListener('input', upd); upd();
+}
+bindCounter('evalContent', 'evalCount');
+bindCounter('reviewContent', 'reviewCount');
+
+// ===== 예시 채우기 =====
+const EVAL_SAMPLE = '본 연구는 딥러닝 기반으로 단백질-리간드 결합 친화도를 예측하여 신약 후보물질을 발굴하고, 강화학습으로 분자 구조를 최적화한다. 3년간 임상 전 단계 후보물질 5종 도출을 목표로 한다.';
+const REVIEW_SAMPLE = '본 연구는 인공지능을 활용하여 의료 영상을 분석하는 시스템을 개발한다. 딥러닝으로 CT·MRI에서 병변을 자동 검출하여 진단 정확도를 높인다. 연구비 5억원, 기간 2년.';
+document.getElementById('evalExample').addEventListener('click', () => {
+  const ta = document.getElementById('evalContent'); ta.value = EVAL_SAMPLE; ta.dispatchEvent(new Event('input'));
+});
+document.getElementById('reviewExample').addEventListener('click', () => {
+  const ta = document.getElementById('reviewContent'); ta.value = REVIEW_SAMPLE; ta.dispatchEvent(new Event('input'));
+});
+
+// ===== AI 키워드 추천 =====
+document.getElementById('assistBtn').addEventListener('click', async () => {
+  const description = document.getElementById('assistInput').value.trim();
+  const $chips = document.getElementById('assistChips');
+  if (!description) { $chips.innerHTML = errorHtml('연구 내용을 입력해주세요.'); return; }
+  showLoading();
+  try {
+    const res = await fetch('/api/search-assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    const kws = data.keywords || [];
+    $chips.innerHTML = kws.length
+      ? kws.map((k) => `<button type="button" class="chip" data-kw="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('')
+      : '<span class="empty-msg">추천 키워드가 없습니다.</span>';
+  } catch (err) {
+    $chips.innerHTML = errorHtml(err.message || '키워드 추천 중 오류가 발생했습니다.');
+  } finally { hideLoading(); }
+});
+document.getElementById('assistChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.getElementById('searchQuery').value = chip.dataset.kw;
+  startNewSearch();
+});
+
 // ===== 기능 2: 과제 평가 =====
 document.getElementById('evalBtn').addEventListener('click', async () => {
   const content = document.getElementById('evalContent').value.trim();
@@ -185,6 +319,7 @@ document.getElementById('evalBtn').addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(data.error);
     checkDemo(data);
+    lastEval = data;
 
     // 항목별 평가 카드 + 종합 점수 + 개선 제안 렌더링
     const categories = [
@@ -194,7 +329,7 @@ document.getElementById('evalBtn').addEventListener('click', async () => {
       { key: 'impact', label: '기대 효과' },
     ];
 
-    $result.innerHTML = `
+    $result.innerHTML = `${resultActionsHtml()}
       <div class="eval-section">
         <div class="total-score">${data.totalScore}<small> / 10</small></div>
         <p style="text-align:center;color:#64748b;margin-bottom:0.5rem">${data.summary || ''}</p>
@@ -325,9 +460,14 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
 
     if (!res.ok) throw new Error(data.error);
     checkDemo(data);
+    lastReview = data;
+
+    const _ops = (typeof diffWords === 'function') ? diffWords(content, data.revisedContent || '') : null;
+    const origHtml = _ops ? renderDiffHtml(_ops, 'original') : escapeHtml(content);
+    const revHtml = _ops ? renderDiffHtml(_ops, 'revised') : escapeHtml(data.revisedContent || '');
 
     // 강점/약점 태그 + 원본/수정본 나란히 표시
-    $result.innerHTML = `
+    $result.innerHTML = `${resultActionsHtml()}
       <div class="eval-section">
         <h3>강점</h3>
         <div>${(data.strengths || []).map((s) => `<span class="tag-good">${s}</span>`).join('')}</div>
@@ -340,14 +480,16 @@ document.getElementById('reviewBtn').addEventListener('click', async () => {
 
       ${data.overallComment ? `<div class="eval-section"><h3>종합 평가</h3><p style="font-size:0.9rem;color:#475569">${data.overallComment}</p></div>` : ''}
 
+      <div class="result-actions"><button type="button" data-act="reeval">수정본으로 재평가</button></div>
+
       <div class="review-columns">
         <div class="review-col">
           <h3>원본 신청서</h3>
-          <pre>${content}</pre>
+          <pre class="diff-pre">${origHtml}</pre>
         </div>
         <div class="review-col">
           <h3>수정 제안</h3>
-          <pre>${data.revisedContent || ''}</pre>
+          <pre class="diff-pre">${revHtml}</pre>
         </div>
       </div>`;
   } catch (err) {
